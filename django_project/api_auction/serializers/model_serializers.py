@@ -1,9 +1,5 @@
-from pprint import pprint
-
 from api_auction.models import *
 from rest_framework import serializers
-from rest_framework.utils import model_meta
-from backend.global_functions import all_read_only_serializer
 
 
 class OrderOfferSerializer(serializers.ModelSerializer):
