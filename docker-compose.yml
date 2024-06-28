@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    networks:
+      - back
+    volumes:
+      - database:/var/lib/postgresql/data/
+    env_file:
+      - .env
+
+  redis:
+    image: redis
+    networks:
+      - back
+    env_file:
+      - .env
+    ports:
+      - "6379:6379"
+
+  django_project:
+    build: ./django_project
+    command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+    networks:
+      - back
+    volumes:
+      - ./django_project/:/usr/src/app/
+      - static_volume:/home/app/staticfiles
+      - media_volume:/home/app/mediafiles
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  smtp:
+    build: ./smtp_server
+    network_mode: host
+    env_file:
+      - .env
+
+  nginx:
+    build: ./nginx
+    networks:
+      - front
+      - back
+    volumes:
+      - static_volume:/home/app/staticfiles
+      - media_volume:/home/app/mediafiles
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+
+    ports:
+      - '80:80'
+      - '443:443'
+    env_file:
+      - .env
+    depends_on:
+      - django_project
+      - react_app
+    restart: always
+
+  react_app:
+    build: ../auction_frontend
+    networks:
+      - front
+    volumes:
+      - ./react_app/:/usr/src/app/
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../auction_frontend/.env
+    depends_on:
+      - django_project
+
+volumes:
+  database:
+  static_volume:
+  media_volume:
+  ssl_volume:
+
+
+networks:
+  front:
+  back:
