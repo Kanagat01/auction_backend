@@ -1,0 +1,22 @@
+name: Deploy to server
+run-name: ${{ github.actor }} is deploying django project to server
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Update server code
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ${{ secrets.PROJECT_FOLDER }};
+            git pull;
+            docker compose stop;
+            docker compose up -d;
+      - run: echo "💡 The server code has been updated"
