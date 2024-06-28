@@ -9,6 +9,8 @@ from api_auction.models import *
 from api_auction.serializers import *
 from api_users.permissions.customer_permissions import IsCustomerManagerAccount
 
+# test
+
 
 class PreCreateOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
