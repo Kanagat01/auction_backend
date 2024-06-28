@@ -1,5 +1,7 @@
 from pprint import pprint
 
+from django.forms import model_to_dict
+
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -51,7 +53,8 @@ class CreateOrderView(APIView):
             stage_serializer = OrderStageCoupleSerializer(data=stage_data)
             stage_serializer.is_valid(raise_exception=True)
 
-            stage_number = stage_serializer.validated_data.get('order_stage_number', get_unix_time())
+            stage_number = stage_serializer.validated_data.get(
+                'order_stage_number', get_unix_time())
             # check if unique within company
             if OrderStageCouple.check_stage_number(stage_number, company):
                 return error_with_text('order_stage_number_must_be_unique')
@@ -67,7 +70,8 @@ class EditOrderView(APIView):
 
     def post(self, request: Request):
 
-        serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -80,9 +84,75 @@ class EditOrderView(APIView):
         if OrderModel.check_transportation_number(transportation_number, order.customer_manager.company, order.pk):
             return error_with_text('transportation_number_must_be_unique')
 
-        order_serializer = OrderSerializer(order, data=request.data, partial=True)
+        order_serializer = OrderSerializer(
+            order, data=request.data, partial=True)
         if not order_serializer.is_valid():
             return error_with_text(order_serializer.errors)
+
+        stages_data = request.data.pop('stages', [])
+        add_stages = []
+        stage_data_dict = {}
+        for s in stages_data:
+            if "id" in s:
+                stage_data_dict[s["id"]] = s
+            else:
+                add_stages.append(s)
+
+        delete_stages = []
+        edit_stages = []
+        for stage in OrderStageCouple.objects.filter(order=order):
+            if stage.pk not in stage_data_dict.keys():
+                delete_stages.append(model_to_dict(stage))
+            else:
+                edit_stages.append(stage_data_dict[stage.pk])
+
+        for idx, stage_data in enumerate(delete_stages):
+            stage_data["order_stage_id"] = stage_data.pop("id")
+            serializer = CustomerGetOrderCoupleSerializer(
+                data=stage_data, context={'request': request})
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+
+            delete_stages[idx] = serializer.validated_data['order_stage_id']
+
+        for idx, stage_data in enumerate(edit_stages):
+            stage_data["order_stage_id"] = stage_data.pop("id")
+            serializer = CustomerGetOrderCoupleSerializer(
+                data=stage_data, context={'request': request})
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+
+            order_stage_id = serializer.validated_data['order_stage_id']
+
+            stage_couple = OrderStageCoupleSerializer(
+                order_stage_id, data=stage_data, partial=True)
+
+            if not stage_couple.is_valid():
+                return error_with_text(stage_couple.errors)
+
+            if OrderStageCouple.check_stage_number(stage_couple.validated_data['order_stage_number'], order.customer_manager.company,
+                                                   order_stage_id.pk):
+                return error_with_text('order_stage_number_must_be_unique')
+
+            edit_stages[idx] = stage_couple
+
+        for idx, stage_data in enumerate(add_stages):
+            stage_serializer = OrderStageCoupleSerializer(data=stage_data)
+            if not stage_serializer.is_valid():
+                return error_with_text(stage_serializer.errors)
+
+            stage_number = stage_serializer.validated_data['order_stage_number']
+            if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company):
+                return error_with_text('order_stage_number_must_be_unique')
+
+            add_stages[idx] = stage_serializer
+
+        for s in delete_stages:
+            s.delete()
+        for s in edit_stages:
+            s.save()
+        for s in add_stages:
+            s.save(order=order)
 
         order.updated_at = timezone.now()
         order_serializer.save()
@@ -94,7 +164,8 @@ class CancelOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -120,7 +191,8 @@ class UnpublishOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -134,7 +206,8 @@ class PublishOrderToView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = PublishOrderToSerializer(data=request.data, context={'request': request})
+        serializer = PublishOrderToSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -142,12 +215,15 @@ class PublishOrderToView(APIView):
         order: OrderModel = serializer.validated_data['order_id']
 
         if publish_to == OrderStatus.in_direct:
-            direct_serializer = PublishToDirectSerializer(data=request.data, context={'request': request})
+            direct_serializer = PublishToDirectSerializer(
+                data=request.data, context={'request': request})
             if not direct_serializer.is_valid():
                 return error_with_text(serializer.errors)
-            transporter_manager = direct_serializer.validated_data['transporter_company_id'].get_manager()
+            transporter_manager = direct_serializer.validated_data['transporter_company_id'].get_manager(
+            )
             price = direct_serializer.validated_data['price']
-            OrderOffer.objects.create(order=order, transporter_manager=transporter_manager, price=price)
+            OrderOffer.objects.create(
+                order=order, transporter_manager=transporter_manager, price=price)
 
         order.make.published_to(publish_to)
 
@@ -158,7 +234,8 @@ class CompleteOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 

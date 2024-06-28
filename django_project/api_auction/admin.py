@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import *
 
 
-# Register your models here.
+admin.site.register(OrderTrackingGeoPoint)
+
 
 @admin.register(OrderModel)
 class OrderAdmin(admin.ModelAdmin):
@@ -14,8 +15,10 @@ class OrderAdmin(admin.ModelAdmin):
         model = OrderDocument
         extra = 0
 
-    list_display = ['id', 'customer_manager', 'transporter_manager', 'created_at', 'updated_at', 'start_price']
-    search_fields = ['id', 'customer_manager__user__username', 'transporter_manager__user__username']
+    list_display = ['id', 'customer_manager', 'transporter_manager',
+                    'created_at', 'updated_at', 'start_price']
+    search_fields = ['id', 'customer_manager__user__username',
+                     'transporter_manager__user__username']
     inlines = [OrderStageCoupleInlines, DocumentInlines]
 
 
