@@ -12,15 +12,17 @@ class OrderOfferSerializer(serializers.ModelSerializer):
         exclude = ['order']
 
 
-class OrderTackingSerializer(serializers.ModelSerializer):
+class OrderTrackingGeoPointSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OrderTracking
+        model = OrderTrackingGeoPoint
         fields = '__all__'
 
 
-class OrderTackingGeoPointSerializer(serializers.ModelSerializer):
+class OrderTrackingSerializer(serializers.ModelSerializer):
+    geopoints = OrderTrackingGeoPointSerializer(many=True)
+
     class Meta:
-        model = OrderTrackingGeoPoint
+        model = OrderTracking
         fields = '__all__'
 
 
@@ -53,15 +55,19 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
         exclude = ['order']
 
     def create(self, validated_data):
-        load_data = OrderLoadStageSerializer(data=validated_data.pop('load_stage', {}))
+        load_data = OrderLoadStageSerializer(
+            data=validated_data.pop('load_stage', {}))
         load_data.is_valid(raise_exception=True)
 
-        unload_data = OrderUnloadStageSerializer(data=validated_data.pop('unload_stage', {}))
+        unload_data = OrderUnloadStageSerializer(
+            data=validated_data.pop('unload_stage', {}))
         unload_data.is_valid(raise_exception=True)
 
         order_stage_couple = OrderStageCouple(**validated_data)
-        load = OrderLoadStage(**load_data.validated_data, order_couple=order_stage_couple)
-        unload = OrderUnloadStage(**unload_data.validated_data, order_couple=order_stage_couple)
+        load = OrderLoadStage(**load_data.validated_data,
+                              order_couple=order_stage_couple)
+        unload = OrderUnloadStage(
+            **unload_data.validated_data, order_couple=order_stage_couple)
 
         order_stage_couple.save()
         load.save()
@@ -87,7 +93,7 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     # take offers that are not rejected
     offers = serializers.SerializerMethodField()
-    tracking = OrderTackingSerializer(read_only=True)
+    tracking = OrderTrackingSerializer(read_only=True)
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
 
@@ -110,7 +116,8 @@ class OrderSerializer(serializers.ModelSerializer):
         return OrderModel.objects.create(**validated_data)
 
     def get_offers(self, obj):
-        offers = OrderOffer.objects.filter(order=obj, status=OrderOfferStatus.none)
+        offers = OrderOffer.objects.filter(
+            order=obj, status=OrderOfferStatus.none)
         return OrderOfferSerializer(offers, many=True).data
 
 
@@ -126,7 +133,8 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         self.for_bidding = for_bidding
         if transporter_manager is None:
-            raise serializers.ValidationError("transporter_manager is required")
+            raise serializers.ValidationError(
+                "transporter_manager is required")
         if for_bidding:
             self.fields.pop('price_step')
             self.fields.pop('start_price')
@@ -139,7 +147,8 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
                             'offers', 'tracking', 'documents', 'price_data']
 
     def get_price_data(self, obj: OrderModel):
-        offer = obj.offers.filter(status=OrderOfferStatus.none).order_by('price').first()
+        offer = obj.offers.filter(
+            status=OrderOfferStatus.none).order_by('price').first()
         if offer is None:
             if self.for_bidding:
                 return None
