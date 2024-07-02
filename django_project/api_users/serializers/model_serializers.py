@@ -56,7 +56,8 @@ class CustomerManagerSerializer(serializers.ModelSerializer):
 class TransporterCompanySerializer(serializers.ModelSerializer):
     user = UserModelSerializer()
     managers = serializers.SerializerMethodField()
-    transporter_company_id = serializers.IntegerField(source='id', read_only=True)
+    transporter_company_id = serializers.IntegerField(
+        source='id', read_only=True)
 
     def __init__(self, *args, from_manager=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,7 +78,8 @@ class TransporterCompanySerializer(serializers.ModelSerializer):
 class TransporterManagerSerializer(serializers.ModelSerializer):
     user = UserModelSerializer()
     company = TransporterCompanySerializer(from_manager=True)
-    transporter_manager_id = serializers.IntegerField(source='id', read_only=True)
+    transporter_manager_id = serializers.IntegerField(
+        source='id', read_only=True)
 
     def __init__(self, *args, from_company=False, **kwargs):
         super().__init__(*args, **kwargs)
