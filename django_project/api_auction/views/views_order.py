@@ -13,7 +13,7 @@ from api_users.permissions.customer_permissions import IsCustomerCompanyAccount,
 
 
 class PreCreateOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def get(self, request: Request):
         # get names of all transport body types, load types, unload types
@@ -29,7 +29,7 @@ class PreCreateOrderView(APIView):
 
 
 class CreateOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
         stages_data = request.data.pop('stages', [])
@@ -68,7 +68,7 @@ class CreateOrderView(APIView):
 
 
 class EditOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
 
@@ -163,7 +163,7 @@ class EditOrderView(APIView):
 
 
 class CancelOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -190,7 +190,7 @@ class CancelOrderView(APIView):
 
 
 class UnpublishOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -205,7 +205,7 @@ class UnpublishOrderView(APIView):
 
 
 class PublishOrderToView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = PublishOrderToSerializer(
@@ -233,7 +233,7 @@ class PublishOrderToView(APIView):
 
 
 class CompleteOrderView(APIView):
-    permission_classes = [IsCustomerCompanyAccount, IsCustomerManagerAccount]
+    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(

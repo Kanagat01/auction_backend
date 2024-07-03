@@ -17,8 +17,10 @@ class PaginationClass(PageNumberPagination):
 @api_view(['GET'])
 @permission_classes([IsCustomerCompanyAccount | IsCustomerManagerAccount])
 def get_orders_view(request: Request) -> Response:
+    status_lst = [OrderStatus.unpublished, OrderStatus.cancelled, OrderStatus.in_auction, OrderStatus.in_bidding,
+                  OrderStatus.in_direct, OrderStatus.being_executed, OrderStatus.completed]
     status = request.query_params.get('status')
-    if status not in list(vars(OrderStatus).values()):
+    if status not in status_lst:
         return error_with_text("invalid_order_status")
 
     kwargs = {"status": status}
@@ -50,45 +52,3 @@ def get_orders_view(request: Request) -> Response:
 #     def get_orders(self, request: Request):
 #         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
 #                                          status=OrderStatus.unpublished)
-
-
-# @get_orders_view_decorator
-# class GetCancelledOrdersView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.cancelled)
-
-
-# @get_orders_view_decorator
-# class GetOrdersInAuctionView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.in_auction)
-
-
-# @get_orders_view_decorator
-# class GetOrdersInBiddingView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.in_bidding)
-
-
-# @get_orders_view_decorator
-# class GetOrdersInDirectView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.in_direct)
-
-
-# @get_orders_view_decorator
-# class GetBeingExecutedOrdersViews:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.being_executed)
-
-
-# @get_orders_view_decorator
-# class GetCompletedOrdersView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.completed)

@@ -11,7 +11,8 @@ class GetOffers(APIView):
     permission_classes = [IsTransporterManagerAccount]
 
     def get(self, request: Request):
-        offers = OrderOffer.objects.filter(transporter_manager=request.user.transporter_manager)
+        offers = OrderOffer.objects.filter(
+            transporter_manager=request.user.transporter_manager)
         return success_with_text(OrderOfferSerializer(offers, many=True).data)
 
 
@@ -19,7 +20,8 @@ class AddOrderOfferView(APIView):
     permission_classes = [IsTransporterManagerAccount]
 
     def post(self, request: Request):
-        serializer = AddOfferToOrderSerializer(data=request.data, context={'request': request})
+        serializer = AddOfferToOrderSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -27,10 +29,11 @@ class AddOrderOfferView(APIView):
         price = serializer.validated_data['price']
         if order.status == OrderStatus.in_auction:
             lowest_price = OrderOffer.get_lowest_price_for(order)
-            if price != lowest_price - order.price_step:
-                return error_with_text(f'not_valid_price. Price must be {lowest_price - order.price_step}')
+            if price > lowest_price - order.price_step:
+                return error_with_text(f'not_valid_price. Price must be less than {lowest_price - order.price_step}')
 
-        OrderOffer.objects.create(order=order, transporter_manager=request.user.transporter_manager, price=price)
+        OrderOffer.objects.create(
+            order=order, transporter_manager=request.user.transporter_manager, price=price)
         return success_with_text('ok')
 
 
@@ -38,7 +41,8 @@ class AcceptOffer(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = GetOrderOfferByIdSerializer(data=request.data, context={'request': request})
+        serializer = GetOrderOfferByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -52,7 +56,8 @@ class RejectOffer(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = GetOrderOfferByIdSerializer(data=request.data, context={'request': request})
+        serializer = GetOrderOfferByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
