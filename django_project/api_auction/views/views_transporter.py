@@ -33,8 +33,16 @@ def get_orders_view(request: Request) -> Response:
     orders = OrderModel.objects.filter(**kwargs)
     for_bidding = status == OrderStatus.in_bidding
     page = PaginationClass().paginate_queryset(orders, request)
-    return success_with_text(OrderSerializerForTransporter(page, many=True, for_bidding=for_bidding,
-                                                           transporter_manager=request.user.transporter_manager).data)
+
+    if request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
+        result = OrderSerializerForTransporter(page, many=True, for_bidding=for_bidding,
+                                               transporter_manager=request.user.transporter_manager).data
+    else:
+        result = []
+        for order in page:
+            result.append(OrderSerializerForTransporter(
+                order, for_bidding=for_bidding, transporter_manager=order.transporter_manager).data)
+    return success_with_text(result)
 
 
 # def get_orders_view_decorator(cls):
