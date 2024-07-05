@@ -220,7 +220,7 @@ class PublishOrderToView(APIView):
             direct_serializer = PublishToDirectSerializer(
                 data=request.data, context={'request': request})
             if not direct_serializer.is_valid():
-                return error_with_text(serializer.errors)
+                return error_with_text(direct_serializer.errors)
             transporter_manager = direct_serializer.validated_data['transporter_company_id'].get_manager(
             )
             price = direct_serializer.validated_data['price']

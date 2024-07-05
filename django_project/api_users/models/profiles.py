@@ -1,12 +1,15 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 from api_users.models.subscriptions import *
 from api_users.models.user import UserModel
 
 
 class CustomerCompany(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='customer_company')
-    company_name = models.CharField(max_length=200, verbose_name='Название компании')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='customer_company')
+    company_name = models.CharField(
+        max_length=200, verbose_name='Название компании')
     subscription = models.CharField(max_length=300, choices=CustomerSubscriptions.choices(),
                                     default=CustomerSubscriptions.FREE, verbose_name='Подписка')
     allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
@@ -24,8 +27,10 @@ class CustomerCompany(models.Model):
 
 
 class CustomerManager(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='customer_manager')
-    company = models.ForeignKey(CustomerCompany, on_delete=models.CASCADE, related_name='managers')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='customer_manager')
+    company = models.ForeignKey(
+        CustomerCompany, on_delete=models.CASCADE, related_name='managers')
 
     class Meta:
         verbose_name = 'Менеджер заказчика'
@@ -36,8 +41,10 @@ class CustomerManager(models.Model):
 
 
 class TransporterCompany(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='transporter_company')
-    company_name = models.CharField(max_length=200, verbose_name='Название компании')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='transporter_company')
+    company_name = models.CharField(
+        max_length=200, verbose_name='Название компании')
     subscription = models.CharField(max_length=300, choices=TransporterSubscriptions.choices(),
                                     default=TransporterSubscriptions.FREE, verbose_name='Подписка')
 
@@ -53,8 +60,10 @@ class TransporterCompany(models.Model):
 
 
 class TransporterManager(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='transporter_manager')
-    company = models.ForeignKey(TransporterCompany, on_delete=models.CASCADE, related_name='managers')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='transporter_manager')
+    company = models.ForeignKey(
+        TransporterCompany, on_delete=models.CASCADE, related_name='managers')
 
     class Meta:
         verbose_name = 'Менеджер перевозчика'
@@ -65,12 +74,23 @@ class TransporterManager(models.Model):
 
 
 class DriverProfile(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='driver_profile')
-    company = models.ForeignKey(TransporterCompany, on_delete=models.CASCADE, related_name='drivers')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='driver_profile')
+    company = models.ForeignKey(
+        TransporterCompany, on_delete=models.CASCADE, related_name='drivers')
     birth_date = models.DateField(verbose_name='Дата рождения')
-    passport_number = models.CharField(max_length=20, verbose_name='Номер паспорта')
-    machine_data = models.CharField(max_length=300, verbose_name='Данные о машине')
-    machine_number = models.CharField(max_length=20, verbose_name='Номер машины')
+    passport_number = models.CharField(
+        max_length=20, verbose_name='Номер паспорта')
+    # phone_number = models.CharField(
+    #     validators=[RegexValidator(
+    #         regex=r'^\+?1?\d{9,15}$', message="invalid_phone_number")],
+    #     # Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.
+    #     max_length=17, verbose_name='Телефон'
+    # )
+    machine_data = models.CharField(
+        max_length=300, verbose_name='Данные о машине')
+    machine_number = models.CharField(
+        max_length=20, verbose_name='Номер машины')
 
     class Meta:
         verbose_name = 'Профиль водителя'
@@ -81,9 +101,11 @@ class DriverProfile(models.Model):
 
 
 class OrderViewer(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='order_viewer')
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='order_viewer')
     # TODO: Change the name if needed
-    order = models.ForeignKey('api_auction.OrderModel', on_delete=models.CASCADE, related_name='viewers')
+    order = models.ForeignKey('api_auction.OrderModel',
+                              on_delete=models.CASCADE, related_name='viewers')
 
     class Meta:
         verbose_name = 'Просмотр заказа'

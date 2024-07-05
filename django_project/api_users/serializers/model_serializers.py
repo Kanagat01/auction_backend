@@ -42,6 +42,7 @@ class CustomerManagerSerializer(serializers.ModelSerializer):
     user = UserModelSerializer()
     customer_manager_id = serializers.IntegerField(source='id', read_only=True)
     company = CustomerCompanySerializer(from_manager=True)
+    allowed_transporter_companies = serializers.SerializerMethodField()
 
     def __init__(self, *args, from_company=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,6 +52,10 @@ class CustomerManagerSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerManager
         exclude = ['id']
+
+    def get_allowed_transporter_companies(self, instance):
+        return TransporterCompanySerializer(instance.company.allowed_transporter_companies.all(), many=True,
+                                            from_manager=True).data
 
 
 class TransporterCompanySerializer(serializers.ModelSerializer):

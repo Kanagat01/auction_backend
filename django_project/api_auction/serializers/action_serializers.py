@@ -22,13 +22,17 @@ class PublishToDirectSerializer(BaseCustomerSerializer):
 
     def validate_transporter_company_id(self, value):
         try:
-            transporter_company: TransporterCompany = TransporterCompany.objects.get(id=value)
+            transporter_company: TransporterCompany = TransporterCompany.objects.get(
+                id=value)
             if not self.customer_manager.company.is_transporter_company_allowed(transporter_company):
-                return serializers.ValidationError('TransporterCompany is not in allowed companies')
-            if not transporter_company.get_manager() is None:
-                return serializers.ValidationError('TransporterCompany has no manager')
+                raise serializers.ValidationError(
+                    'TransporterCompany is not in allowed companies')
+            if transporter_company.get_manager() is None:
+                raise serializers.ValidationError(
+                    'TransporterCompany has no manager')
         except TransporterCompany.DoesNotExist:
-            raise serializers.ValidationError('TransporterCompany with this ID does not exist')
+            raise serializers.ValidationError(
+                'TransporterCompany with this ID does not exist')
         return transporter_company
 
 
@@ -43,7 +47,8 @@ class AddOfferToOrderSerializer(TransporterGetOrderByIdSerializer):
     def validate_order_id(self, value):
         order = super().validate_order_id(value)
         if order.status not in [OrderStatus.in_auction, OrderStatus.in_bidding]:
-            raise serializers.ValidationError('Order is not in auction or bidding')
+            raise serializers.ValidationError(
+                'Order is not in auction or bidding')
         if order.offers.filter(transporter_manager=self.transporter_manager).exists():
             raise serializers.ValidationError('You have already offered')
         return order

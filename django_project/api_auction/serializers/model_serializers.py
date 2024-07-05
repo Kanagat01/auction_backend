@@ -1,8 +1,11 @@
-from api_auction.models import *
 from rest_framework import serializers
+from api_auction.models import *
+from api_users.serializers.model_serializers import CustomerManagerSerializer, TransporterManagerSerializer
 
 
 class OrderOfferSerializer(serializers.ModelSerializer):
+    transporter_manager = TransporterManagerSerializer()
+
     class Meta:
         model = OrderOffer
         exclude = ['order']
@@ -87,6 +90,8 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    customer_manager = CustomerManagerSerializer(read_only=True)
+    transporter_manager = TransporterManagerSerializer(read_only=True)
     # take offers that are not rejected
     offers = serializers.SerializerMethodField()
     tracking = OrderTrackingSerializer(read_only=True)
@@ -113,11 +118,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_offers(self, obj):
         offers = OrderOffer.objects.filter(
-            order=obj, status=OrderOfferStatus.none)
+            order=obj, status=OrderOfferStatus.none).order_by('price')
         return OrderOfferSerializer(offers, many=True).data
 
 
 class OrderSerializerForTransporter(serializers.ModelSerializer):
+    customer_manager = CustomerManagerSerializer(read_only=True)
+    transporter_manager = TransporterManagerSerializer(read_only=True)
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
     price_data = serializers.SerializerMethodField()
@@ -157,6 +164,7 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
                 return None
 
         return {
+            "offer_id": offer.id,
             "price": offer.price,
             "by_you": offer.transporter_manager == self.transporter_manager,
         }
