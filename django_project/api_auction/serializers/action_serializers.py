@@ -1,7 +1,7 @@
 from api_auction.models import *
 from rest_framework import serializers
 
-from api_users.models import TransporterCompany
+from api_users.models import TransporterCompany, DriverProfile
 from .getter_serializers import CustomerGetOrderByIdSerializer, TransporterGetOrderByIdSerializer, \
     BaseCustomerSerializer
 
@@ -52,3 +52,20 @@ class AddOfferToOrderSerializer(TransporterGetOrderByIdSerializer):
         if order.offers.filter(transporter_manager=self.transporter_manager).exists():
             raise serializers.ValidationError('You have already offered')
         return order
+
+
+class AddDriverDataSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField()
+
+    class Meta:
+        model = DriverProfile
+        fields = ['machine_data', 'machine_number',
+                  'passport_number', 'phone_number', 'full_name']
+
+    def validate_full_name(self, value):
+        if value == "":
+            raise serializers.ValidationError("full_name required")
+        elif len(value) > 300:
+            raise serializers.ValidationError(
+                "full_name should be less than 300 symbols")
+        return value

@@ -7,7 +7,8 @@ from .order import OrderModel
 
 
 class OrderTracking(models.Model):
-    order = models.OneToOneField(OrderModel, on_delete=models.CASCADE, verbose_name='Заказ', related_name='tracking')
+    order = models.OneToOneField(
+        OrderModel, on_delete=models.CASCADE, verbose_name='Заказ', related_name='tracking')
 
     # relationship fields:
     # geopoints
@@ -27,7 +28,8 @@ class OrderTrackingGeoPoint(models.Model):
     latitude = models.FloatField(verbose_name='Широта')
     longitude = models.FloatField(verbose_name='Долгота')
 
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Время создания')
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время создания')
 
     class Meta:
         verbose_name = 'Геоточка'
@@ -38,10 +40,12 @@ class OrderTrackingGeoPoint(models.Model):
 
 
 class OrderDocument(models.Model):
-    order = models.ForeignKey('OrderModel', on_delete=models.CASCADE, verbose_name='Заказ', related_name='documents')
+    order = models.ForeignKey('OrderModel', on_delete=models.CASCADE,
+                              verbose_name='Заказ', related_name='documents')
 
     file = models.FileField(upload_to='documents/', verbose_name='Файл')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Время создания')
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время создания')
 
     class Meta:
         verbose_name = 'Документ'
@@ -66,11 +70,13 @@ class OrderOfferStatus:
 
 
 class OrderOffer(models.Model):
-    order = models.ForeignKey(OrderModel, on_delete=models.CASCADE, verbose_name='Заказ', related_name='offers')
+    order = models.ForeignKey(
+        OrderModel, on_delete=models.CASCADE, verbose_name='Заказ', related_name='offers')
     transporter_manager = models.ForeignKey(TransporterManager, on_delete=models.CASCADE, verbose_name='Перевозчик',
                                             related_name='offers')
     price = models.PositiveIntegerField(verbose_name='Цена')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Время создания')
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время создания')
     status = models.CharField(max_length=20, choices=OrderOfferStatus.choices(), default=OrderOfferStatus.none,
                               verbose_name='Статус')
 
@@ -83,7 +89,8 @@ class OrderOffer(models.Model):
 
     def make_rejected(self):
         if self.status != OrderOfferStatus.none:
-            raise ValidationError('You can not reject accepted or rejected offer')
+            raise ValidationError(
+                'You can not reject accepted or rejected offer')
         self.status = OrderOfferStatus.rejected
         self.save()
 

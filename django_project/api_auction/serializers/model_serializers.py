@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from api_auction.models import *
-from api_users.serializers.model_serializers import CustomerManagerSerializer, TransporterManagerSerializer
+from api_users.serializers.model_serializers import CustomerManagerSerializer, TransporterManagerSerializer, DriverProfileSerializer
 
 
 class OrderOfferSerializer(serializers.ModelSerializer):
@@ -92,6 +92,7 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     customer_manager = CustomerManagerSerializer(read_only=True)
     transporter_manager = TransporterManagerSerializer(read_only=True)
+    driver = DriverProfileSerializer(read_only=True)
     # take offers that are not rejected
     offers = serializers.SerializerMethodField()
     tracking = OrderTrackingSerializer(read_only=True)
@@ -107,7 +108,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderModel
         fields = '__all__'
-        read_only_fields = ['customer_manager', 'id', 'created_at', 'updated_at', 'transporter_manager', 'status',
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at', 'customer_manager', 'transporter_manager', 'driver',
                             'offers', 'tracking', 'documents']
 
     def create(self, validated_data):
@@ -125,6 +126,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderSerializerForTransporter(serializers.ModelSerializer):
     customer_manager = CustomerManagerSerializer(read_only=True)
     transporter_manager = TransporterManagerSerializer(read_only=True)
+    driver = DriverProfileSerializer(read_only=True)
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
     price_data = serializers.SerializerMethodField()
@@ -146,7 +148,7 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
     class Meta:
         model = OrderModel
         fields = '__all__'
-        read_only_fields = ['customer_manager', 'id', 'created_at', 'updated_at', 'transporter_manager', 'status',
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at', 'customer_manager', 'transporter_manager', 'driver',
                             'offers', 'tracking', 'documents', 'price_data']
 
     def get_price_data(self, obj: OrderModel):

@@ -26,6 +26,7 @@ transporter = [
     path('reject_offer/', RejectOfferTransporter.as_view()),
 
     path('add_document/', AddDocumentView.as_view()),
+    path('add_driver_data/', views_transporter.AddDriverData.as_view()),
     path('get_orders/', views_transporter.get_orders_view),  # uses paginator
 ]
 

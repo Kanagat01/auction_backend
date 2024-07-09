@@ -1,9 +1,5 @@
 from django.db import models
-
-# Create your models here.
-from django.contrib.auth.models import AbstractBaseUser
-from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser
 
 
 class UserTypes:
@@ -29,9 +25,11 @@ class UserTypes:
 
 
 class UserModel(AbstractUser):
-    email = models.EmailField(unique=True, verbose_name='Электронная почта', max_length=300)
+    email = models.EmailField(
+        unique=True, verbose_name='Электронная почта', max_length=300)
     blocked = models.BooleanField(default=False, verbose_name='Заблокирован')
-    user_type = models.CharField(max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
+    user_type = models.CharField(
+        max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
     full_name = models.CharField(max_length=200, )
     REQUIRED_FIELDS = ['full_name', 'user_type', 'email']
 
@@ -49,22 +47,28 @@ class UserModel(AbstractUser):
             return
 
         if self.user_type == UserTypes.CUSTOMER_COMPANY and not hasattr(self, 'customer_company'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "customer_company"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "customer_company"')
 
         if self.user_type == UserTypes.CUSTOMER_MANAGER and not hasattr(self, 'customer_manager'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "customer_manager"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "customer_manager"')
 
         if self.user_type == UserTypes.TRANSPORTER_COMPANY and not hasattr(self, 'transporter_company'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "transporter_company"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "transporter_company"')
 
         if self.user_type == UserTypes.TRANSPORTER_MANAGER and not hasattr(self, 'transporter_manager'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "transporter_manager"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "transporter_manager"')
 
         if self.user_type == UserTypes.DRIVER and not hasattr(self, 'driver_profile'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "driver_profile"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "driver_profile"')
 
         if self.user_type == UserTypes.ORDER_VIEWER and not hasattr(self, 'order_viewer'):
-            raise UserSaveException(f'User {self.id} is "{self.user_type}" but has no "order_viewer"')
+            raise UserSaveException(
+                f'User {self.id} is "{self.user_type}" but has no "order_viewer"')
 
         super().save(*args, **kwargs)
 

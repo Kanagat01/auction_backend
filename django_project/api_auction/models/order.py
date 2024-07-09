@@ -2,7 +2,7 @@ from django.utils import timezone
 from django.db import models
 from rest_framework.exceptions import ValidationError
 
-from api_users.models import CustomerManager, TransporterManager, CustomerCompany
+from api_users.models import CustomerManager, TransporterManager, CustomerCompany, DriverProfile
 from api_auction.models import order_transport
 
 
@@ -133,21 +133,29 @@ class OrderModel(models.Model):
     transporter_manager = models.ForeignKey(TransporterManager, on_delete=models.SET_NULL,
                                             verbose_name='Менеджер Перевозчика', related_name='orders',
                                             null=True, blank=True)
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Время создания')
-    updated_at = models.DateTimeField(default=timezone.now, verbose_name='Время обновления')
+    driver = models.ForeignKey(DriverProfile, on_delete=models.SET_NULL,
+                               verbose_name='Водитель', related_name='orders',
+                               null=True, blank=True)
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время создания')
+    updated_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время обновления')
 
     # status
     status = models.CharField(max_length=300, choices=OrderStatus.choices(), verbose_name='Статус заказа',
                               default=OrderStatus.unpublished)
 
     # must be unique within company (both two fields)
-    transportation_number = models.IntegerField(default=get_unix_time, verbose_name='Номер транспортировки')
+    transportation_number = models.IntegerField(
+        default=get_unix_time, verbose_name='Номер транспортировки')
 
     # other stuff
     start_price = models.PositiveIntegerField(verbose_name='Стартовая цена')
     price_step = models.PositiveIntegerField(verbose_name='Шаг цены')
-    comments_for_transporter = models.TextField(max_length=20_000, verbose_name='Комментарии для перевозчика')
-    additional_requirements = models.TextField(max_length=20_000, verbose_name='Дополнительные требования')
+    comments_for_transporter = models.TextField(
+        max_length=20_000, verbose_name='Комментарии для перевозчика')
+    additional_requirements = models.TextField(
+        max_length=20_000, verbose_name='Дополнительные требования')
 
     # requirements for transport
     transport_body_type = models.ForeignKey(order_transport.OrderTransportBodyType, on_delete=models.CASCADE,
@@ -156,12 +164,17 @@ class OrderModel(models.Model):
                                             verbose_name='Тип загрузки транспорта')
     transport_unload_type = models.ForeignKey(order_transport.OrderTransportUnloadType, on_delete=models.CASCADE,
                                               verbose_name='Тип выгрузки транспорта')
-    transport_volume = models.PositiveIntegerField(verbose_name='Объем ТС (м3)')
-    temp_mode = models.CharField(max_length=300, verbose_name='Температурный режим')
+    transport_volume = models.PositiveIntegerField(
+        verbose_name='Объем ТС (м3)')
+    temp_mode = models.CharField(
+        max_length=300, verbose_name='Температурный режим')
     adr = models.PositiveIntegerField(default=False, verbose_name='ADR [шт.]')
-    transport_body_width = models.PositiveIntegerField(verbose_name='Ширина кузова')
-    transport_body_length = models.PositiveIntegerField(verbose_name='Длина кузова')
-    transport_body_height = models.PositiveIntegerField(verbose_name='Высота кузова')
+    transport_body_width = models.PositiveIntegerField(
+        verbose_name='Ширина кузова')
+    transport_body_length = models.PositiveIntegerField(
+        verbose_name='Длина кузова')
+    transport_body_height = models.PositiveIntegerField(
+        verbose_name='Высота кузова')
 
     # relationships fields:
     # stages
@@ -189,7 +202,8 @@ class OrderModel(models.Model):
             raise ValueError('Number must be int')
         if not company:
             raise ValueError('Company must be set')
-        query = OrderModel.objects.filter(transportation_number=number, customer_manager__company=company)
+        query = OrderModel.objects.filter(
+            transportation_number=number, customer_manager__company=company)
         if pk:
             query = query.exclude(pk=pk)
         return query.exists()

@@ -45,6 +45,43 @@ def get_orders_view(request: Request) -> Response:
     return success_with_text(result)
 
 
+class AddDriverData(APIView):
+    permission_classes = [IsTransporterCompanyAccount |
+                          IsTransporterManagerAccount]
+
+    def post(self, request: Request):
+        order_id = request.data.pop("order_id")
+        order_serializer = TransporterGetOrderByIdSerializer(
+            data={"order_id": order_id}, context={'request': request})
+        if not order_serializer.is_valid():
+            return error_with_text(order_serializer.errors)
+
+        order: OrderModel = order_serializer.validated_data['order_id']
+        if order.driver:
+            return error_with_text("This order already have a driver")
+
+        driver_serializer = AddDriverDataSerializer(data=request.data)
+        if not driver_serializer.is_valid():
+            return error_with_text(driver_serializer.errors)
+
+        full_name = driver_serializer.validated_data.pop('full_name')
+        phone_number = driver_serializer.validated_data['phone_number']
+
+        try:
+            driver = DriverProfile.objects.get(phone_number=phone_number)
+            driver.user_or_fullname.full_name = full_name
+            driver.user_or_fullname.save()
+        except DriverProfile.DoesNotExist:
+            full_name_instance = FullNameModel.objects.create(
+                full_name=full_name)
+            driver = DriverProfile.objects.create(
+                **driver_serializer.validated_data, content_type=ContentType.objects.get_for_model(full_name_instance), object_id=full_name_instance.id
+            )
+        order.driver = driver
+        order.save()
+        return success_with_text(DriverProfileSerializer(driver).data)
+
+
 # def get_orders_view_decorator(cls):
 #     class GetOrdersView(APIView):
 #         permission_classes = [IsTransporterManagerAccount]
@@ -58,7 +95,6 @@ def get_orders_view(request: Request) -> Response:
 #                                                                    transporter_manager=request.user.transporter_manager).data)
 
 #     return GetOrdersView
-
 
 # @get_orders_view_decorator
 # class GetCancelledOrdersView:

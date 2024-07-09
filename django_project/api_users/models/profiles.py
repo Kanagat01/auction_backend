@@ -1,8 +1,21 @@
 from django.db import models
+from django.utils import timezone
 from django.core.validators import RegexValidator
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from api_users.models.subscriptions import *
 from api_users.models.user import UserModel
+
+
+class PhoneNumberValidator(RegexValidator):
+    '''Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed'''
+    regex = r'^\+?1?\d{9,15}$'
+    message = "invalid_phone_number"
+
+
+class FullNameModel(models.Model):
+    full_name = models.CharField(max_length=300, verbose_name="ФИО")
 
 
 class CustomerCompany(models.Model):
@@ -74,30 +87,36 @@ class TransporterManager(models.Model):
 
 
 class DriverProfile(models.Model):
-    user = models.OneToOneField(
-        UserModel, on_delete=models.CASCADE, related_name='driver_profile')
-    company = models.ForeignKey(
-        TransporterCompany, on_delete=models.CASCADE, related_name='drivers')
-    birth_date = models.DateField(verbose_name='Дата рождения')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
+                                     'model__in': ('usermodel', 'fullnamemodel')})
+    object_id = models.PositiveIntegerField()
+    user_or_fullname = GenericForeignKey('content_type', 'object_id')
+
+    companies = models.ManyToManyField(
+        TransporterCompany, related_name='drivers')
+    birth_date = models.DateField(
+        default=timezone.now().date, verbose_name='Дата рождения')
     passport_number = models.CharField(
         max_length=20, verbose_name='Номер паспорта')
-    # phone_number = models.CharField(
-    #     validators=[RegexValidator(
-    #         regex=r'^\+?1?\d{9,15}$', message="invalid_phone_number")],
-    #     # Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.
-    #     max_length=17, verbose_name='Телефон'
-    # )
+    phone_number = models.CharField(
+        validators=[PhoneNumberValidator()], max_length=17, verbose_name='Телефон')
     machine_data = models.CharField(
-        max_length=300, verbose_name='Данные о машине')
+        max_length=300, verbose_name='Данные авто')
     machine_number = models.CharField(
-        max_length=20, verbose_name='Номер машины')
+        max_length=20, verbose_name='Номер авто')
 
     class Meta:
         verbose_name = 'Профиль водителя'
         verbose_name_plural = 'Профили водителей'
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=['content_type', 'object_id', 'user_or_fullname'],
+        #         name='unique_driver_profile'
+        #     )
+        # ]
 
     def __str__(self):
-        return f'{self.pk} Профиль водителя - [{self.user}]'
+        return f'{self.pk} Профиль водителя - [{self.user_or_fullname.full_name}]'
 
 
 class OrderViewer(models.Model):
