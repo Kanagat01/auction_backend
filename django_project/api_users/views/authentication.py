@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.authtoken.models import Token
 
-from backend.settings import REACT_RESET_URL
+from backend.settings import REACT_RESET_PASSWORD_URL
 from backend.global_functions import success_with_text, error_with_text
 from api_users.serializers import *
 
@@ -112,7 +112,7 @@ class PasswordResetView(APIView):
         )
         message = [
             "Вы сделали запрос на сброс пароля.",
-            f"Нажмите на ссылку, чтобы сбросить свой пароль: {REACT_RESET_URL + token}",
+            f"Нажмите на ссылку, чтобы сбросить свой пароль: {REACT_RESET_PASSWORD_URL + token}",
             "Ссылка будет недоступна через 24 часа.",
             "Если это были не вы, не переходите по ссылке"
         ]
