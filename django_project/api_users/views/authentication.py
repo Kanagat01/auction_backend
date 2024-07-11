@@ -100,6 +100,10 @@ class PasswordResetView(APIView):
 
         token_generator = PasswordResetTokenGenerator()
         token = token_generator.make_token(user)
+
+        reset_objects = PasswordReset.objects.filter(token=token)
+        for reset_obj in reset_objects:
+            reset_obj.delete()
         reset = PasswordReset(email=email, token=token)
         reset.save()
 
@@ -148,4 +152,7 @@ class PasswordResetConfirmView(APIView):
         user.set_password(new_password)
         user.save()
         reset_obj.delete()
-        return success_with_text('ok')
+
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        return success_with_text({'token': token.key})

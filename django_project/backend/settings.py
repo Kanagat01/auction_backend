@@ -34,7 +34,7 @@ ALLOWED_HOSTS = os.environ.get(
 CORS_ALLOW_ALL_ORIGINS = True
 
 REACT_RESET_URL = os.environ.get(
-    "REACT_RESET_URL", "http://localhost:3000/reset-password-confirm/")
+    "REACT_RESET_URL", "http://localhost:5173/reset-password-confirm/")
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", 'skanagat2005@gmail.com')
