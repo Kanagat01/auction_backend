@@ -1,5 +1,5 @@
+import datetime
 from django.db import models
-from django.utils import timezone
 from django.core.validators import RegexValidator
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -95,7 +95,7 @@ class DriverProfile(models.Model):
     companies = models.ManyToManyField(
         TransporterCompany, related_name='drivers')
     birth_date = models.DateField(
-        default=timezone.now().date, verbose_name='Дата рождения')
+        default=datetime.date.today, verbose_name='Дата рождения')
     passport_number = models.CharField(
         max_length=20, verbose_name='Номер паспорта')
     phone_number = models.CharField(

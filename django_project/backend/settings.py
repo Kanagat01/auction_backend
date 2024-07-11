@@ -22,14 +22,26 @@ AUTH_USER_MODEL = 'api_users.UserModel'
 USERNAME_FIELD = 'email'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", default="django-insecure-3b!7h8__f5e2frki-d&*)gb5y@--&*e&#oh=41y)cq%jwh$g5c")
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", default="django-insecure-3b!7h8__f5e2frki-d&*)gb5y@--&*e&#oh=41y)cq%jwh$g5c")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=1))
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split(" ")
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split(" ")
 # CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(" ")
 CORS_ALLOW_ALL_ORIGINS = True
+
+REACT_RESET_URL = os.environ.get(
+    "REACT_RESET_URL", "http://localhost:3000/reset-password-confirm/")
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", 'skanagat2005@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "EMAIL_HOST_PASSWORD", 'qyqc itlp aquz gowk')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 INSTALLED_APPS = [
     "daphne",

@@ -1,9 +1,8 @@
-import datetime
 import os
 
+import smtplib
 from fastapi import FastAPI
 from pydantic import BaseModel
-import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -48,7 +47,8 @@ async def send_email(item: Item):
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.starttls()
     server.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
-    server.sendmail(msg['From'], [recipients[0]] + ['BCC: ' + rec for rec in recipients[1:]], msg.as_string())
+    server.sendmail(msg['From'], [recipients[0]] + ['BCC: ' +
+                    rec for rec in recipients[1:]], msg.as_string())
     # server.sendmail(msg['From'], msg['To'].split(', '), msg.as_string())
     server.quit()
 

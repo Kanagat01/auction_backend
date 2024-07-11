@@ -1,7 +1,15 @@
-from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
+from rest_framework import serializers
 from api_users.models import UserModel
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
 
 
 class LogInSerializer(serializers.Serializer):

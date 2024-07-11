@@ -5,7 +5,9 @@ auth = [
     path('register_transporter/', RegisterTransporterCompanyView.as_view()),
     path('register_customer/', RegisterCustomerCompanyView.as_view()),
     path('login/', Login.as_view()),
-
+    path('reset_password/', PasswordResetView.as_view()),
+    path('reset_password_confirm/<str:token>/',
+         PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 ]
 
 common = [
@@ -14,9 +16,10 @@ common = [
 ]
 
 customer = [
-
-    path('add_transporter_to_allowed_companies/', AddTransporterToAllowedCompanies.as_view()),
-    path('delete_transporter_from_allowed_companies/', DeleteTransporterFromAllowedCompanies.as_view()),
+    path('add_transporter_to_allowed_companies/',
+         AddTransporterToAllowedCompanies.as_view()),
+    path('delete_transporter_from_allowed_companies/',
+         DeleteTransporterFromAllowedCompanies.as_view()),
 ]
 
 transporter = [
