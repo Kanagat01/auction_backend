@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.authtoken.models import Token
 
-from backend.settings import REACT_RESET_PASSWORD_URL
+from backend.settings import EMAIL_HOST_USER, REACT_RESET_PASSWORD_URL
 from backend.global_functions import success_with_text, error_with_text
 from api_users.serializers import *
 
@@ -119,7 +119,7 @@ class PasswordResetView(APIView):
         send_mail(
             'Запрос на сброс пароля',
             "\n".join(message),
-            'skanagat2005@gmail.com',
+            EMAIL_HOST_USER,
             [email],
         )
         return success_with_text('ok')
