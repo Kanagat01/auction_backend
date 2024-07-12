@@ -36,11 +36,15 @@ CORS_ALLOW_ALL_ORIGINS = True
 REACT_RESET_PASSWORD_URL = os.environ.get(
     "REACT_RESET_PASSWORD_URL", "http://localhost:5173/reset-password-confirm/")
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST")
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT"))
-EMAIL_USE_SSL = bool(os.environ.get("EMAIL_USE_SSL"))
+if "kargonika.ru" not in ALLOWED_HOSTS:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_HOST_USER = "example@gmail.com"
+else:
+    EMAIL_HOST = os.environ.get("EMAIL_HOST")
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT"))
+    EMAIL_USE_SSL = bool(os.environ.get("EMAIL_USE_SSL"))
 
 INSTALLED_APPS = [
     "daphne",

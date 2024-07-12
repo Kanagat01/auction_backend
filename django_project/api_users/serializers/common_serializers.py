@@ -17,3 +17,14 @@ class RegisterManagerSerializer(serializers.Serializer):
     def validate_password(self, password):
         validate_password(password)
         return password
+
+
+class EditUserSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    full_name = serializers.CharField(max_length=200)
+    company_name = serializers.CharField(max_length=200)
+
+    def __init__(self, *args, from_manager=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if from_manager:
+            self.fields.pop('company_name')

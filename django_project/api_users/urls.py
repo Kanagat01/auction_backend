@@ -12,6 +12,7 @@ auth = [
 
 common = [
     path('get_user/', GetUser.as_view()),
+    path('edit_user/', EditUser.as_view()),
     path('register_manager/', RegisterManagerForCompany.as_view()),
 ]
 

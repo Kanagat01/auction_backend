@@ -28,8 +28,38 @@ class GetUser(APIView):
         return error_with_text('user_not_found')
 
 
+class EditUser(APIView):
+    """
+    Edit user info
+    """
+
+    def post(self, request: Request):
+        instance: UserModel = request.user
+        from_manager = instance.user_type in [
+            UserTypes.CUSTOMER_MANAGER, UserTypes.TRANSPORTER_MANAGER]
+        serializer = EditUserSerializer(
+            data=request.data, from_manager=from_manager)
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        if not from_manager:
+            company_name = serializer.validated_data["company_name"]
+            if instance.user_type == UserTypes.CUSTOMER_COMPANY:
+                CustomerCompany.objects.update(
+                    user=instance, company_name=company_name)
+            else:
+                TransporterCompany.objects.update(
+                    user=instance, company_name=company_name)
+
+        instance.email = serializer.validated_data["email"]
+        instance.full_name = serializer.validated_data["full_name"]
+        instance.save()
+        return success_with_text("ok")
+
+
 class RegisterManagerForCompany(APIView):
-    permission_classes = [IsCustomerCompanyAccount | IsTransporterCompanyAccount]
+    permission_classes = [IsCustomerCompanyAccount |
+                          IsTransporterCompanyAccount]
 
     def post(self, request: Request):
         serializer = RegisterManagerSerializer(data=request.data)
@@ -49,12 +79,14 @@ class RegisterManagerForCompany(APIView):
         )
         print('Retgistering manager with paswd:', password)
         if user.user_type == UserTypes.CUSTOMER_MANAGER:
-            ins = CustomerManager.objects.create(user=user, company=request.user.customer_company)
+            ins = CustomerManager.objects.create(
+                user=user, company=request.user.customer_company)
             user.set_password(password)
             user.save()
             return success_with_text(CustomerManagerSerializer(ins, from_company=True).data)
         else:
-            ins = TransporterManager.objects.create(user=user, company=request.user.transporter_company)
+            ins = TransporterManager.objects.create(
+                user=user, company=request.user.transporter_company)
             user.set_password(password)
             user.save()
             return success_with_text(TransporterManagerSerializer(ins, from_company=True).data)
