@@ -51,6 +51,7 @@ class EditUser(APIView):
                 TransporterCompany.objects.update(
                     user=instance, company_name=company_name)
 
+        instance.username = serializer.validated_data["email"]
         instance.email = serializer.validated_data["email"]
         instance.full_name = serializer.validated_data["full_name"]
         instance.save()

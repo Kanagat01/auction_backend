@@ -5,6 +5,7 @@ from api_auction.models import *
 from api_auction.serializers import *
 from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
 from api_users.permissions.customer_permissions import IsCustomerManagerAccount
+from api_notification.models import Notification
 
 
 class GetOffers(APIView):
@@ -83,6 +84,11 @@ class RejectOfferTransporter(APIView):
         if offer.transporter_manager != request.user.transporter_manager:
             return error_with_text('You are not the owner of this offer')
         offer.make_rejected()
+        Notification.objects.create(
+            user=offer.order.customer_manager.user,
+            title=f"Заказ отклонена",
+            description=f"Транспортировка №{offer.order.transportation_number} отклонена Перевозчиком {offer.transporter_manager.company.company_name}"
+        )
 
         return success_with_text(OrderSerializer(offer.order).data)
 
@@ -99,5 +105,9 @@ class AcceptOfferTransporter(APIView):
         if offer.transporter_manager != request.user.transporter_manager:
             return error_with_text('You are not the owner of this offer')
         offer.make_accepted()
-
+        Notification.objects.create(
+            user=offer.order.customer_manager.user,
+            title=f"Заказ перешла в работу",
+            description=f"Транспортировка №{offer.order.transportation_number} принята Перевозчиком {offer.transporter_manager.company.company_name}"
+        )
         return success_with_text(OrderSerializer(offer.order).data)

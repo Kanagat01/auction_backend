@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from api_users.models import UserTypes
 from api_users.permissions import IsTransporterManagerAccount
 from backend.global_functions import success_with_text, error_with_text
@@ -10,15 +8,18 @@ from api_users.permissions.customer_permissions import IsCustomerManagerAccount
 
 
 class AddDocumentView(APIView):
-    permission_classes = [IsCustomerManagerAccount | IsTransporterManagerAccount]
+    permission_classes = [IsCustomerManagerAccount |
+                          IsTransporterManagerAccount]
 
     def post(self, request: Request):
         if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
-            serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+            serializer = CustomerGetOrderByIdSerializer(
+                data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             order = serializer.validated_data['order_id']
         else:
-            serializer = TransporterGetOrderByIdSerializer(data=request.data, context={'request': request})
+            serializer = TransporterGetOrderByIdSerializer(
+                data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             order: OrderModel = serializer.validated_data['order_id']
             if order.transporter_manager != request.user.transporter_manager:
@@ -38,7 +39,8 @@ class DeleteDocumentView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = GetDocumentByIdSerializer(data=request.data, context={'request': request})
+        serializer = GetDocumentByIdSerializer(
+            data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         document = serializer.validated_data['document_id']
         document.delete()

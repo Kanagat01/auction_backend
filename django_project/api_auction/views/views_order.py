@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from django.forms import model_to_dict
 
 from backend.global_functions import success_with_text, error_with_text

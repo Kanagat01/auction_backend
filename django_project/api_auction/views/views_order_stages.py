@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -12,7 +10,8 @@ class AddStageToOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderByIdSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -35,7 +34,8 @@ class EditStageView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderCoupleSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderCoupleSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -45,7 +45,8 @@ class EditStageView(APIView):
         if order.status != OrderStatus.unpublished:
             return error_with_text("You can edit stages only in unpublished orders.")
 
-        a = OrderStageCoupleSerializer(stage_couple, data=request.data, partial=True)
+        a = OrderStageCoupleSerializer(
+            stage_couple, data=request.data, partial=True)
         a.is_valid(raise_exception=True)
 
         if OrderStageCouple.check_stage_number(a.validated_data['order_stage_number'], order.customer_manager.company,
@@ -61,7 +62,8 @@ class DeleteStageView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
     def post(self, request: Request):
-        serializer = CustomerGetOrderCoupleSerializer(data=request.data, context={'request': request})
+        serializer = CustomerGetOrderCoupleSerializer(
+            data=request.data, context={'request': request})
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
