@@ -49,7 +49,11 @@ class AcceptOffer(APIView):
 
         offer: OrderOffer = serializer.validated_data['order_offer_id']
         offer.make_accepted()
-
+        Notification.objects.create(
+            user=offer.transporter_manager.user,
+            title=f"Ваше предложение принято",
+            description=f'Ваше предложение на транспортировку №{offer.order.transportation_number} было принято. Статус заказа изменен на "Выполняется"'
+        )
         return success_with_text(OrderSerializer(offer.order).data)
 
 

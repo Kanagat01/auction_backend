@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
+from api_notification.models import Notification
 from api_users.permissions.customer_permissions import IsCustomerCompanyAccount, IsCustomerManagerAccount
 
 # test
@@ -224,9 +225,21 @@ class PublishOrderToView(APIView):
             price = direct_serializer.validated_data['price']
             OrderOffer.objects.create(
                 order=order, transporter_manager=transporter_manager, price=price)
-
+            Notification.objects.create(
+                user=transporter_manager.user,
+                title=f"Вам назначен заказ",
+                description=f"Вам назначение транспортировка №{order.transportation_number} заказчиком {order.customer_manager.company.company_name}. Вы можете принять или отклонить предложение"
+            )
         order.make.published_to(publish_to)
-
+        if publish_to != OrderStatus.in_direct:
+            companies = order.customer_manager.company.allowed_transporter_companies.all()
+            for company in companies:
+                for manager in company.managers.all():
+                    Notification.objects.create(
+                        user=manager.user,
+                        title=f"Новый заказ в {'в аукционе' if publish_to == OrderStatus.in_auction else 'в торгах'}",
+                        description=f"Транспортировка №{order.transportation_number} добавлена {'в аукцион' if publish_to == OrderStatus.in_auction else 'в торги'}"
+                    )
         return success_with_text(OrderSerializer(order).data)
 
 
