@@ -1,8 +1,6 @@
 import os
 from urllib.parse import parse_qs
 from django.core.asgi import get_asgi_application
-from django.contrib.auth.models import AnonymousUser
-from rest_framework.authtoken.models import Token
 from channels.security.websocket import AllowedHostsOriginValidator
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.db import database_sync_to_async
@@ -11,6 +9,8 @@ from api_notification.routing import websocket_urlpatterns
 
 @database_sync_to_async
 def get_user(token):
+    from django.contrib.auth.models import AnonymousUser
+    from rest_framework.authtoken.models import Token
     try:
         token = Token.objects.get(key=token)
         return token.user
