@@ -8,7 +8,7 @@ RUN mkdir $HOME
 WORKDIR $HOME
 
 # install system dependencies
-RUN apt-get update && apt-get install -y gcc netcat build-essential
+RUN apt-get update && apt-get install -y gcc netcat 
 
 RUN pip install --upgrade pip
 COPY ./r.txt .
