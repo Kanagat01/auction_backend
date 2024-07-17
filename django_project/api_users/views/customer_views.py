@@ -33,7 +33,7 @@ class AddTransporterToAllowedCompanies(APIView):
 
         customer_company.allowed_transporter_companies.add(transporter_company)
 
-        return success_with_text('ok')
+        return success_with_text(TransporterCompanySerializer(transporter_company, from_manager=True).data)
 
 
 class DeleteTransporterFromAllowedCompanies(APIView):
