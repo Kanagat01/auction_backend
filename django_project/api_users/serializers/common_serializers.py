@@ -28,3 +28,9 @@ class EditUserSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
         if from_manager:
             self.fields.pop('company_name')
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(max_length=200)
+    new_password = serializers.CharField(max_length=200)
+    repeat_password = serializers.CharField(max_length=200)

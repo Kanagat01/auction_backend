@@ -1,9 +1,10 @@
-from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
+from rest_framework.authtoken.models import Token
 from api_users.models import *
 from api_users.serializers import *
+from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount
 
 
 class GetUser(APIView):
@@ -58,8 +59,30 @@ class EditUser(APIView):
         return success_with_text("ok")
 
 
+class ChangePassword(APIView):
+    def post(self, request: Request):
+        user: UserModel = request.user
+        serializer = ChangePasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        data = serializer.validated_data
+        if not user.check_password(data["old_password"]):
+            return error_with_text("wrong_password")
+        elif data["new_password"] != data["repeat_password"]:
+            return error_with_text("passwords_do_not_match")
+
+        user.set_password(data["new_password"])
+        user.save()
+
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        return success_with_text({'token': token.key})
+
+
 class RegisterManagerForCompany(APIView):
-    permission_classes = [IsCustomerCompanyAccount]
+    permission_classes = [IsCustomerCompanyAccount |
+                          IsTransporterCompanyAccount]
 
     def post(self, request: Request):
         serializer = RegisterManagerSerializer(data=request.data)
