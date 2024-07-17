@@ -4,7 +4,6 @@ from django.core.asgi import get_asgi_application
 from channels.db import database_sync_to_async
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
-from api_notification.routing import websocket_urlpatterns
 
 
 class QueryAuthMiddleware:
@@ -21,6 +20,8 @@ class QueryAuthMiddleware:
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django_asgi_app = get_asgi_application()
+
+from api_notification.routing import websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
