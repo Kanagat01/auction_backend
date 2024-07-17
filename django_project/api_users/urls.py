@@ -17,6 +17,7 @@ common = [
 ]
 
 customer = [
+    path('get_transporter_companies/', GetTransporterCompanies.as_view()),
     path('add_transporter_to_allowed_companies/',
          AddTransporterToAllowedCompanies.as_view()),
     path('delete_transporter_from_allowed_companies/',

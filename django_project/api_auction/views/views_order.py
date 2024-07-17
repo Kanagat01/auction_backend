@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
-from api_notification.models import Notification
+from api_notification.models import Notification, NotificationType
 from api_users.permissions.customer_permissions import IsCustomerCompanyAccount, IsCustomerManagerAccount
 
 # test
@@ -228,7 +228,12 @@ class PublishOrderToView(APIView):
             Notification.objects.create(
                 user=transporter_manager.user,
                 title=f"Вам назначен заказ",
-                description=f"Вам назначение транспортировка №{order.transportation_number} заказчиком {order.customer_manager.company.company_name}. Вы можете принять или отклонить предложение"
+                description=(
+                    f"Вам назначена транспортировка №{order.transportation_number} "
+                    f"заказчиком {order.customer_manager.company.company_name}. "
+                    "Вы можете принять или отклонить предложение"
+                ),
+                type=NotificationType.NEW_ORDER_IN_DIRECT
             )
         order.make.published_to(publish_to)
         if publish_to != OrderStatus.in_direct:
@@ -238,7 +243,15 @@ class PublishOrderToView(APIView):
                     Notification.objects.create(
                         user=manager.user,
                         title=f"Новый заказ в {'в аукционе' if publish_to == OrderStatus.in_auction else 'в торгах'}",
-                        description=f"Транспортировка №{order.transportation_number} добавлена {'в аукцион' if publish_to == OrderStatus.in_auction else 'в торги'}"
+                        description=(
+                            f"Транспортировка №{order.transportation_number} добавлена "
+                            f"{'в аукцион' if publish_to == OrderStatus.in_auction else 'в торги'}"
+                        ),
+                        type=(
+                            NotificationType.NEW_ORDER_IN_AUCTION
+                            if publish_to == OrderStatus.in_auction
+                            else NotificationType.NEW_ORDER_IN_BIDDING
+                        )
                     )
         return success_with_text(OrderSerializer(order).data)
 

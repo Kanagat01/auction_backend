@@ -59,8 +59,7 @@ class EditUser(APIView):
 
 
 class RegisterManagerForCompany(APIView):
-    permission_classes = [IsCustomerCompanyAccount |
-                          IsTransporterCompanyAccount]
+    permission_classes = [IsCustomerCompanyAccount]
 
     def post(self, request: Request):
         serializer = RegisterManagerSerializer(data=request.data)

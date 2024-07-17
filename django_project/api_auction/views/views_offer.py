@@ -5,7 +5,7 @@ from api_auction.models import *
 from api_auction.serializers import *
 from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
 from api_users.permissions.customer_permissions import IsCustomerManagerAccount
-from api_notification.models import Notification
+from api_notification.models import Notification, NotificationType
 
 
 class GetOffers(APIView):
@@ -52,7 +52,11 @@ class AcceptOffer(APIView):
         Notification.objects.create(
             user=offer.transporter_manager.user,
             title=f"Ваше предложение принято",
-            description=f'Ваше предложение на транспортировку №{offer.order.transportation_number} было принято. Статус заказа изменен на "Выполняется"'
+            description=(
+                f'Ваше предложение на транспортировку №{offer.order.transportation_number} было принято. '
+                'Статус заказа изменен на "Выполняется"'
+            ),
+            type=NotificationType.NEW_ORDER_BEING_EXECUTED
         )
         return success_with_text(OrderSerializer(offer.order).data)
 
@@ -91,7 +95,11 @@ class RejectOfferTransporter(APIView):
         Notification.objects.create(
             user=offer.order.customer_manager.user,
             title=f"Заказ отклонена",
-            description=f"Транспортировка №{offer.order.transportation_number} отклонена Перевозчиком {offer.transporter_manager.company.company_name}"
+            description=(
+                f"Транспортировка №{offer.order.transportation_number} отклонена "
+                f"Перевозчиком {offer.transporter_manager.company.company_name}"
+            ),
+            type=NotificationType.INFO
         )
 
         return success_with_text(OrderSerializer(offer.order).data)
@@ -112,6 +120,10 @@ class AcceptOfferTransporter(APIView):
         Notification.objects.create(
             user=offer.order.customer_manager.user,
             title=f"Заказ перешла в работу",
-            description=f"Транспортировка №{offer.order.transportation_number} принята Перевозчиком {offer.transporter_manager.company.company_name}"
+            description=(
+                f"Транспортировка №{offer.order.transportation_number} принята "
+                f"Перевозчиком {offer.transporter_manager.company.company_name}"
+            ),
+            type=NotificationType.INFO
         )
         return success_with_text(OrderSerializer(offer.order).data)

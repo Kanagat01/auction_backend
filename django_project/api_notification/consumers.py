@@ -27,5 +27,4 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def send_notification(self, event):
         new_notification = await database_sync_to_async(
             Notification.objects.get)(id=int(event["notification_id"]))
-        print(new_notification)
         await self.send(text_data=json.dumps({"new_notification": NotificationSerializer(new_notification).data}))
