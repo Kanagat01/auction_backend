@@ -32,17 +32,29 @@ def get_orders_view(request: Request) -> Response:
 
     orders = OrderModel.objects.filter(**kwargs)
     for_bidding = status == OrderStatus.in_bidding
-    page = PaginationClass().paginate_queryset(orders, request)
+    paginator = PaginationClass()
+    page = paginator.paginate_queryset(orders, request)
 
     if request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
-        result = OrderSerializerForTransporter(page, many=True, for_bidding=for_bidding,
-                                               transporter_manager=request.user.transporter_manager).data
+        result = OrderSerializerForTransporter(
+            page,
+            many=True,
+            for_bidding=for_bidding,
+            transporter_manager=request.user.transporter_manager
+        ).data
     else:
-        result = []
-        for order in page:
-            result.append(OrderSerializerForTransporter(
-                order, for_bidding=for_bidding, transporter_manager=order.transporter_manager).data)
-    return success_with_text(result)
+        result = [
+            OrderSerializerForTransporter(
+                order,
+                for_bidding=for_bidding,
+                transporter_manager=order.transporter_manager
+            ).data for order in page
+        ]
+    pagination_data = {
+        'pages_total': paginator.page.paginator.num_pages,
+        'current_page': paginator.page.number
+    }
+    return success_with_text({'pagination': pagination_data, 'orders': result})
 
 
 class AddDriverData(APIView):
@@ -80,26 +92,3 @@ class AddDriverData(APIView):
         order.driver = driver
         order.save()
         return success_with_text(DriverProfileSerializer(driver).data)
-
-
-# def get_orders_view_decorator(cls):
-#     class GetOrdersView(APIView):
-#         permission_classes = [IsTransporterManagerAccount]
-
-#         def get(self, request: Request):
-#             a = cls()
-#             orders = a.get_orders(request)
-#             for_bidding = a.for_bidding if hasattr(a, 'for_bidding') else False
-#             page = PaginationClass().paginate_queryset(orders, request)
-#             return success_with_text(OrderSerializerForTransporter(page, many=True, for_bidding=for_bidding,
-#                                                                    transporter_manager=request.user.transporter_manager).data)
-
-#     return GetOrdersView
-
-# @get_orders_view_decorator
-# class GetCancelledOrdersView:
-#     def get_orders(self, request: Request):
-#         company: TransporterCompany = request.user.transporter_manager.company
-#         allowed_companies = company.allowed_customer_companies.all()
-#         return OrderModel.objects.filter(customer_manager__company__in=allowed_companies,
-#                                          status=OrderStatus.cancelled)

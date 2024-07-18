@@ -34,20 +34,3 @@ urlpatterns = [
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
 ]
-
-# path('add_order_stage/', AddStageToOrderView.as_view()),
-# path('edit_order_stage/', EditStageView.as_view()),
-# path('delete_order_stage/', DeleteStageView.as_view()),
-
-# path('get_cancelled_orders/',
-#         views_transporter.GetCancelledOrdersView.as_view()),  # uses paginator
-# path('get_orders_in_auction/',
-#         views_transporter.GetOrdersInAuctionView.as_view()),  # uses paginator
-# path('get_orders_in_bidding/',
-#         views_transporter.GetOrdersInBiddingView.as_view()),  # uses paginator
-# path('get_orders_in_direct/',
-#         views_transporter.GetOrdersInDirectView.as_view()),  # uses paginator
-# path('get_being_executed_orders/',
-#         views_transporter.GetBeingExecutedOrdersViews.as_view()),  # uses paginator
-# path('get_completed_orders/',
-#         views_transporter.GetCompletedOrdersView.as_view()),  # uses paginator

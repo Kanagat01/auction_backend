@@ -30,8 +30,14 @@ def get_orders_view(request: Request) -> Response:
         kwargs['customer_manager__company'] = request.user.customer_company
 
     orders = OrderModel.objects.filter(**kwargs)
-    page = PaginationClass().paginate_queryset(orders, request)
-    return success_with_text(OrderSerializer(page, many=True).data)
+    paginator = PaginationClass()
+    page = paginator.paginate_queryset(orders, request)
+
+    pagination_data = {
+        'pages_total': paginator.page.paginator.num_pages,
+        'current_page': paginator.page.number
+    }
+    return success_with_text({'pagination': pagination_data, 'orders': OrderSerializer(page, many=True).data})
 
 
 # def get_orders_view_decorator(cls):
