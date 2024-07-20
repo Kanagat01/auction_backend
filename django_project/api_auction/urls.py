@@ -2,8 +2,6 @@ from django.urls import path, include
 from .views import *
 
 customer = [
-    path('get_orders/', views_customer.get_orders_view),  # uses paginator
-
     path('pre_create_order/', PreCreateOrderView.as_view()),
     path('create_order/', CreateOrderView.as_view()),
     path('edit_order/', EditOrderView.as_view()),
@@ -26,11 +24,11 @@ transporter = [
     path('reject_offer/', RejectOfferTransporter.as_view()),
 
     path('add_document/', AddDocumentView.as_view()),
-    path('add_driver_data/', views_transporter.AddDriverData.as_view()),
-    path('get_orders/', views_transporter.get_orders_view),  # uses paginator
+    path('add_driver_data/', views_transporter.AddDriverData.as_view())
 ]
 
 urlpatterns = [
+    path("get_orders/", GetOrdersView.as_view()),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
 ]

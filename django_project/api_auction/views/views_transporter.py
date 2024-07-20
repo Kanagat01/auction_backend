@@ -1,70 +1,14 @@
 from backend.global_functions import success_with_text, error_with_text
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
 from api_auction.models import *
 from api_auction.serializers import *
 from api_users.models import *
-from api_users.permissions.transporter_permissions import IsTransporterCompanyAccount, IsTransporterManagerAccount
-
-
-class PaginationClass(PageNumberPagination):
-    page_size = 20
-
-
-@api_view(['GET'])
-@permission_classes([IsTransporterCompanyAccount | IsTransporterManagerAccount])
-def get_orders_view(request: Request) -> Response:
-    status_lst = [OrderStatus.cancelled, OrderStatus.in_auction, OrderStatus.in_bidding,
-                  OrderStatus.in_direct, OrderStatus.being_executed, OrderStatus.completed]
-    status = request.query_params.get('status')
-    if status not in status_lst:
-        return error_with_text("invalid_order_status")
-
-    if status == OrderStatus.being_executed:
-        status_filter = Q(status=OrderStatus.being_executed) | Q(
-            status=OrderStatus.completed)
-    else:
-        status_filter = Q(status=status)
-
-    if request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
-        company: TransporterCompany = request.user.transporter_manager.company
-    else:
-        company: TransporterCompany = request.user.transporter_company
-
-    orders = OrderModel.objects.filter(
-        status_filter, customer_manager__company__in=company.allowed_customer_companies.all())
-    for_bidding = status == OrderStatus.in_bidding
-    paginator = PaginationClass()
-    page = paginator.paginate_queryset(orders, request)
-
-    if request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
-        result = OrderSerializerForTransporter(
-            page,
-            many=True,
-            for_bidding=for_bidding,
-            transporter_manager=request.user.transporter_manager
-        ).data
-    else:
-        result = [
-            OrderSerializerForTransporter(
-                order,
-                for_bidding=for_bidding,
-                transporter_manager=order.transporter_manager
-            ).data for order in page if order.transporter_manager is not None
-        ]
-    pagination_data = {
-        'pages_total': paginator.page.paginator.num_pages,
-        'current_page': paginator.page.number
-    }
-    return success_with_text({'pagination': pagination_data, 'orders': result})
+from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
 
 
 class AddDriverData(APIView):
-    permission_classes = [IsTransporterCompanyAccount |
-                          IsTransporterManagerAccount]
+    permission_classes = [IsTransporterManagerAccount]
 
     def post(self, request: Request):
         order_id = request.data.pop("order_id")
