@@ -1,6 +1,13 @@
+from django.db.models import Q
 from rest_framework import serializers
 from api_auction.models import *
 from api_users.serializers.model_serializers import CustomerManagerSerializer, TransporterManagerSerializer, DriverProfileSerializer
+
+
+class OrderApplicationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderApplicationType
+        fields = '__all__'
 
 
 class OrderOfferSerializer(serializers.ModelSerializer):
@@ -98,6 +105,7 @@ class OrderSerializer(serializers.ModelSerializer):
     tracking = OrderTrackingSerializer(read_only=True)
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
+    application_type = serializers.SerializerMethodField()
 
     def __init__(self, *args, with_offers=True, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,10 +125,24 @@ class OrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("customer_manager is required")
         return OrderModel.objects.create(**validated_data)
 
-    def get_offers(self, obj):
-        offers = OrderOffer.objects.filter(
-            order=obj, status=OrderOfferStatus.none).order_by('price')
+    def get_offers(self, obj: OrderModel):
+        if obj.status == OrderStatus.being_executed:
+            offers = [OrderOffer.objects.filter(
+                status=OrderOfferStatus.accepted).order_by('-created_at').first()]
+
+        else:
+            offers = OrderOffer.objects.filter(
+                Q(order=obj) &
+                (Q(status=OrderOfferStatus.none)
+                 if obj.status != OrderStatus.in_direct else Q(status=OrderOfferStatus.none) | Q(status=OrderOfferStatus.rejected))
+            ).order_by('price')
         return OrderOfferSerializer(offers, many=True).data
+
+    def get_application_type(self, obj):
+        try:
+            return obj.application_type.status
+        except OrderApplicationType.DoesNotExist:
+            return None
 
 
 class OrderSerializerForTransporter(serializers.ModelSerializer):
@@ -130,6 +152,7 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
     price_data = serializers.SerializerMethodField()
+    application_type = serializers.SerializerMethodField()
 
     def __init__(self, *args, transporter_manager: TransporterManager, for_bidding: bool = False, **kwargs):
         """
@@ -152,24 +175,34 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
                             'offers', 'tracking', 'documents', 'price_data']
 
     def get_price_data(self, obj: OrderModel):
-        offer = obj.offers.filter(
-            status=OrderOfferStatus.none).order_by('price').first()
-        if offer is None:
-            if self.for_bidding:
-                return None
-            return {
-                "price": obj.start_price,
-                "by_you": False,
-            }
+        offer = OrderOffer.objects.filter(
+            order=obj,
+            transporter_manager=self.transporter_manager,
+            status=OrderOfferStatus.none if obj.status != OrderStatus.being_executed else OrderOfferStatus.accepted
+        ).first()
         if self.for_bidding:
-            if offer.transporter_manager != self.transporter_manager:
+            if offer is None:
                 return None
+            return {"offer_id": offer.id, "price": offer.price}
 
+        best_offer = obj.offers.filter(
+            status=OrderOfferStatus.none).order_by('price').first()
+
+        if not best_offer:
+            return None
+        if not offer:
+            return {"current_price": best_offer.price}
         return {
             "offer_id": offer.id,
             "price": offer.price,
-            "by_you": offer.transporter_manager == self.transporter_manager,
+            "is_best_offer": offer.price == best_offer.price,
         }
+
+    def get_application_type(self, obj):
+        try:
+            return obj.application_type.status
+        except OrderApplicationType.DoesNotExist:
+            return None
 
 
 class OrderTransportBodyTypeSerializer(serializers.ModelSerializer):

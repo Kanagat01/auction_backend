@@ -49,18 +49,19 @@ class _OrderMake:
         Отменить заказ
         Если заказ уже завершен - нельзя отменить
 
-        ВНИМАНИЕ: отклоняет все предложения перевозчиков
+        ВНИМАНИЕ: удаляет все предложения перевозчиков
 
         :return:
         """
         if self.order.status == OrderStatus.completed:
             raise ValidationError('order_is_completed')
 
+        for i in self.order.offers.all():
+            i.delete()
+
         self.order.transporter_manager = None
         self.order.status = OrderStatus.cancelled
         self.order.save()
-
-        [i.make_rejected() for i in self.order.offers.all()]
 
     def unpublished(self):
         """
@@ -105,6 +106,13 @@ class _OrderMake:
         """
         if self.order.status not in OrderStatus.publish_to_choices():
             raise ValidationError('order_is_not_in_auction_bidding_direct')
+
+        try:
+            self.order.application_type.status = self.order.status
+            self.order.application_type.save()
+        except OrderApplicationType.DoesNotExist:
+            OrderApplicationType.objects.create(
+                order=self.order, status=self.order.status)
 
         self.order.transporter_manager = offer.transporter_manager
         self.order.status = OrderStatus.being_executed
@@ -207,3 +215,13 @@ class OrderModel(models.Model):
         if pk:
             query = query.exclude(pk=pk)
         return query.exists()
+
+
+class OrderApplicationType(models.Model):
+    order = models.OneToOneField(
+        OrderModel, on_delete=models.CASCADE, verbose_name="Заказ", related_name="application_type")
+    status = models.CharField(
+        max_length=300, choices=[
+            (OrderStatus.in_auction, 'Аукцион'),
+            (OrderStatus.in_bidding, 'Торги'),
+            (OrderStatus.in_direct, 'Прямой заказ')], verbose_name='Тип заявки')

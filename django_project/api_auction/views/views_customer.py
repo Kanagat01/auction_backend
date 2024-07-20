@@ -1,6 +1,6 @@
 from backend.global_functions import success_with_text, error_with_text
+from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -22,14 +22,18 @@ def get_orders_view(request: Request) -> Response:
     status = request.query_params.get('status')
     if status not in status_lst:
         return error_with_text("invalid_order_status")
-
-    kwargs = {"status": status}
-    if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
-        kwargs["customer_manager"] = request.user.customer_manager
+    if status == OrderStatus.being_executed:
+        status_filter = Q(status=OrderStatus.being_executed) | Q(
+            status=OrderStatus.completed)
     else:
-        kwargs['customer_manager__company'] = request.user.customer_company
+        status_filter = Q(status=status)
+    filter_kwargs = {}
+    if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
+        filter_kwargs["customer_manager"] = request.user.customer_manager
+    else:
+        filter_kwargs['customer_manager__company'] = request.user.customer_company
 
-    orders = OrderModel.objects.filter(**kwargs)
+    orders = OrderModel.objects.filter(status_filter, **filter_kwargs)
     paginator = PaginationClass()
     page = paginator.paginate_queryset(orders, request)
 

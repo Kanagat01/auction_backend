@@ -23,14 +23,19 @@ def get_orders_view(request: Request) -> Response:
     if status not in status_lst:
         return error_with_text("invalid_order_status")
 
-    kwargs = {"status": status}
+    if status == OrderStatus.being_executed:
+        status_filter = Q(status=OrderStatus.being_executed) | Q(
+            status=OrderStatus.completed)
+    else:
+        status_filter = Q(status=status)
+
     if request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
         company: TransporterCompany = request.user.transporter_manager.company
     else:
         company: TransporterCompany = request.user.transporter_company
-    kwargs["customer_manager__company__in"] = company.allowed_customer_companies.all()
 
-    orders = OrderModel.objects.filter(**kwargs)
+    orders = OrderModel.objects.filter(
+        status_filter, customer_manager__company__in=company.allowed_customer_companies.all())
     for_bidding = status == OrderStatus.in_bidding
     paginator = PaginationClass()
     page = paginator.paginate_queryset(orders, request)
@@ -48,7 +53,7 @@ def get_orders_view(request: Request) -> Response:
                 order,
                 for_bidding=for_bidding,
                 transporter_manager=order.transporter_manager
-            ).data for order in page
+            ).data for order in page if order.transporter_manager is not None
         ]
     pagination_data = {
         'pages_total': paginator.page.paginator.num_pages,

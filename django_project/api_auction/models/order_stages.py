@@ -1,21 +1,28 @@
 from django.utils import timezone
 from django.db import models
 from api_auction.models import get_unix_time
-from api_users.models import UserModel, CustomerCompany
+from api_users.models import CustomerCompany
 
 
 class OrderStageCouple(models.Model):
-    order = models.ForeignKey('OrderModel', on_delete=models.CASCADE, verbose_name='Заказ', related_name='stages')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Время создания')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Время обновления')
-    order_stage_number = models.IntegerField(default=get_unix_time, verbose_name='Номер поставки')
+    order = models.ForeignKey(
+        'OrderModel', on_delete=models.CASCADE, verbose_name='Заказ', related_name='stages')
+    created_at = models.DateTimeField(
+        default=timezone.now, verbose_name='Время создания')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Время обновления')
+    order_stage_number = models.IntegerField(
+        default=get_unix_time, verbose_name='Номер поставки')
 
     # relation fields
     # load_stage = models.OneToOneField('OrderLoadStage', on_delete=models.CASCADE, verbose_name='Этап загрузки')
     # unload_stage = models.OneToOneField('OrderUnloadStage', on_delete=models.CASCADE, verbose_name='Этап выгрузки')
 
     def save(self, *args, **kwargs):
-        if not self.load_stage or not self.unload_stage:
+        try:
+            load_stage = self.load_stage
+            unload_stage = self.unload_stage
+        except self.RelatedObjectDoesNotExist:
             raise ValueError("Load stage and unload stage must be set")
         super().save(*args, **kwargs)
 
@@ -32,7 +39,8 @@ class OrderStageCouple(models.Model):
             raise ValueError('Number must be int')
         if not company:
             raise ValueError('Company must be set')
-        query = OrderStageCouple.objects.filter(order_stage_number=number, order__customer_manager__company=company)
+        query = OrderStageCouple.objects.filter(
+            order_stage_number=number, order__customer_manager__company=company)
         if pk:
             query = query.exclude(pk=pk)
         return query.exists()
@@ -47,14 +55,21 @@ class OrderStages(models.Model):
     time_start = models.TimeField(verbose_name='Время начала')
     time_end = models.TimeField(verbose_name='Время окончания')
 
-    company = models.CharField(max_length=300, verbose_name='Компания')  # Maybe Foreign Key!
+    company = models.CharField(
+        max_length=300, verbose_name='Компания')  # Maybe Foreign Key!
+    postal_code = models.CharField(
+        max_length=20, verbose_name='Почтовый индекс')
+    city = models.CharField(max_length=100, verbose_name='Город')
     address = models.CharField(max_length=5000, verbose_name='Адрес')
-    contact_person = models.CharField(max_length=300, verbose_name='Контактное лицо')  # Maybe Foreign Key!
+    contact_person = models.CharField(
+        max_length=300, verbose_name='Контактное лицо')  # Maybe Foreign Key!
 
-    cargo = models.CharField(max_length=300, verbose_name='Груз')  # Maybe Foreign Key!
+    cargo = models.CharField(
+        max_length=300, verbose_name='Груз')  # Maybe Foreign Key!
     weight = models.PositiveIntegerField(verbose_name='Вес')
     volume = models.PositiveIntegerField(verbose_name='Объем')
-    comments = models.TextField(max_length=20_000, verbose_name='Комментарии к поставке')
+    comments = models.TextField(
+        max_length=20_000, verbose_name='Комментарии к поставке')
 
     class Meta:
         verbose_name = 'Этап заказа'
