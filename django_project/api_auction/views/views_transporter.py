@@ -18,20 +18,21 @@ class AddDriverData(APIView):
             return error_with_text(order_serializer.errors)
 
         order: OrderModel = order_serializer.validated_data['order_id']
-        if order.driver:
-            return error_with_text("This order already have a driver")
-
+        if order.status != OrderStatus.being_executed:
+            return error_with_text("Status should be being_executed")
         driver_serializer = AddDriverDataSerializer(data=request.data)
         if not driver_serializer.is_valid():
             return error_with_text(driver_serializer.errors)
 
         full_name = driver_serializer.validated_data.pop('full_name')
         phone_number = driver_serializer.validated_data['phone_number']
-
         try:
             driver = DriverProfile.objects.get(phone_number=phone_number)
             driver.user_or_fullname.full_name = full_name
             driver.user_or_fullname.save()
+            for key, value in driver_serializer.validated_data.items():
+                setattr(driver, key, value)
+            driver.save()
         except DriverProfile.DoesNotExist:
             full_name_instance = FullNameModel.objects.create(
                 full_name=full_name)

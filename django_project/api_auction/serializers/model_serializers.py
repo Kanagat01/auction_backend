@@ -107,11 +107,16 @@ class OrderSerializer(serializers.ModelSerializer):
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
     application_type = serializers.SerializerMethodField()
 
-    def __init__(self, *args, with_offers=True, **kwargs):
+    def __init__(self, *args, with_offers=True, for_order_viewer=False, **kwargs):
         super().__init__(*args, **kwargs)
         if not with_offers:
             # для перевозчика не надо видеть
             self.fields.pop('offers')
+        if for_order_viewer:
+            self.fields.pop("offers")
+            self.fields.pop("start_price")
+            self.fields.pop("price_step")
+            self.fields.pop("application_type")
 
     class Meta:
         model = OrderModel

@@ -19,6 +19,18 @@ class PaginationClass(PageNumberPagination):
     page_size = 20
 
 
+class GetOrderView(APIView):
+    permission_classes = ()
+
+    def get(self, request, transportation_number):
+        try:
+            order = OrderModel.objects.get(
+                transportation_number=transportation_number)
+            return success_with_text(OrderSerializer(order, for_order_viewer=True).data)
+        except OrderModel.DoesNotExist:
+            return error_with_text("order_not_found")
+
+
 class GetOrdersView(APIView):
     permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount |
                           IsTransporterCompanyAccount | IsTransporterManagerAccount]
@@ -57,7 +69,8 @@ class GetOrdersView(APIView):
             case UserTypes.TRANSPORTER_COMPANY:
                 filter_kwargs['customer_manager__company__in'] = user.transporter_company.allowed_customer_companies.all()
 
-        orders = OrderModel.objects.filter(status_filter, **filter_kwargs)
+        orders = OrderModel.objects.filter(
+            status_filter, **filter_kwargs).order_by("-updated_at")
         city_from = request.query_params.get('city_from')
 
         if city_from:
