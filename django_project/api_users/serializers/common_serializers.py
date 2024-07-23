@@ -23,7 +23,8 @@ class EditUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     full_name = serializers.CharField(max_length=200)
     company_name = serializers.CharField(max_length=200)
-    details = serializers.CharField(required=False, allow_blank=True)
+    details = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True)
 
     def __init__(self, *args, from_manager=False, **kwargs):
         super().__init__(*args, **kwargs)
