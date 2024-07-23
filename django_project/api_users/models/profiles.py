@@ -27,7 +27,8 @@ class CustomerCompany(models.Model):
                                     default=CustomerSubscriptions.FREE, verbose_name='Подписка')
     allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
                                                            related_name='allowed_customer_companies')
-    details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
+    details = models.TextField(
+        default="", verbose_name="Реквизиты", blank=True, null=True)
 
     class Meta:
         verbose_name = 'Компания заказчика'
