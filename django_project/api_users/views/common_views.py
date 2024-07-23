@@ -44,17 +44,23 @@ class EditUser(APIView):
             return error_with_text(serializer.errors)
 
         if not from_manager:
-            company_name = serializer.validated_data["company_name"]
             if instance.user_type == UserTypes.CUSTOMER_COMPANY:
-                CustomerCompany.objects.update(
-                    user=instance, company_name=company_name)
+                company = CustomerCompany.objects.get(user=instance)
             else:
-                TransporterCompany.objects.update(
-                    user=instance, company_name=company_name)
+                company = TransporterCompany.objects.get(user=instance)
+
+            company_name = serializer.validated_data["company_name"]
+            if company_name:
+                company.company_name = company_name
+
+            details = serializer.validated_data["details"]
+            if details:
+                company.details = details
+            company.save()
 
         instance.username = serializer.validated_data["email"]
-        instance.email = serializer.validated_data["email"]
-        instance.full_name = serializer.validated_data["full_name"]
+        for key, value in serializer.validated_data.items():
+            setattr(instance, key, value)
         instance.save()
         return success_with_text("ok")
 

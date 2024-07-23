@@ -23,11 +23,13 @@ class EditUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     full_name = serializers.CharField(max_length=200)
     company_name = serializers.CharField(max_length=200)
+    details = serializers.CharField(required=False, allow_blank=True)
 
     def __init__(self, *args, from_manager=False, **kwargs):
         super().__init__(*args, **kwargs)
         if from_manager:
             self.fields.pop('company_name')
+            self.fields.pop('details')
 
 
 class ChangePasswordSerializer(serializers.Serializer):
