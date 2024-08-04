@@ -13,6 +13,10 @@ class OrderStageCouple(models.Model):
         auto_now=True, verbose_name='Время обновления')
     order_stage_number = models.IntegerField(
         default=get_unix_time, verbose_name='Номер поставки')
+    cargo = models.CharField(
+        max_length=300, verbose_name='Груз')  # Maybe Foreign Key!
+    weight = models.PositiveIntegerField(verbose_name='Вес')
+    volume = models.PositiveIntegerField(verbose_name='Объем')
 
     # relation fields
     # load_stage = models.OneToOneField('OrderLoadStage', on_delete=models.CASCADE, verbose_name='Этап загрузки')
@@ -64,12 +68,8 @@ class OrderStages(models.Model):
     contact_person = models.CharField(
         max_length=300, verbose_name='Контактное лицо')  # Maybe Foreign Key!
 
-    cargo = models.CharField(
-        max_length=300, verbose_name='Груз')  # Maybe Foreign Key!
-    weight = models.PositiveIntegerField(verbose_name='Вес')
-    volume = models.PositiveIntegerField(verbose_name='Объем')
-    comments = models.TextField(
-        max_length=20_000, verbose_name='Комментарии к поставке')
+    comments = models.TextField(null=True, blank=True,
+                                max_length=20_000, verbose_name='Комментарии к поставке')
 
     class Meta:
         verbose_name = 'Этап заказа'

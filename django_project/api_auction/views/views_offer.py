@@ -33,8 +33,14 @@ class AddOrderOfferView(APIView):
             if price > lowest_price - order.price_step:
                 return error_with_text(f'not_valid_price. Price must be less than {lowest_price - order.price_step}')
 
-        OrderOffer.objects.create(
-            order=order, transporter_manager=request.user.transporter_manager, price=price)
+        try:
+            offer = OrderOffer.objects.get(
+                order=order, transporter_manager=request.user.transporter_manager)
+            offer.price = price
+            offer.save()
+        except OrderOffer.DoesNotExist:
+            OrderOffer.objects.create(
+                order=order, transporter_manager=request.user.transporter_manager, price=price)
         return success_with_text('ok')
 
 

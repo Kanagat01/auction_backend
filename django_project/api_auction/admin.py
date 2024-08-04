@@ -5,6 +5,8 @@ from .models import *
 admin.site.register(OrderTracking)
 admin.site.register(OrderTrackingGeoPoint)
 admin.site.register(OrderOffer)
+admin.site.register(OrderLoadStage)
+admin.site.register(OrderUnloadStage)
 
 
 @admin.register(OrderModel)

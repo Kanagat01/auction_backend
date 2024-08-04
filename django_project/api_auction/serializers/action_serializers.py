@@ -49,8 +49,6 @@ class AddOfferToOrderSerializer(TransporterGetOrderByIdSerializer):
         if order.status not in [OrderStatus.in_auction, OrderStatus.in_bidding]:
             raise serializers.ValidationError(
                 'Order is not in auction or bidding')
-        if order.offers.filter(transporter_manager=self.transporter_manager).exists():
-            raise serializers.ValidationError('You have already offered')
         return order
 
 

@@ -15,6 +15,7 @@ customer = [
     path('unpublish_order/', UnpublishOrderView.as_view()),
     path('publish_order/', PublishOrderToView.as_view()),
     path('complete_order/', CompleteOrderView.as_view()),
+    path('cancel_order_completion/', CancelOrderCompletionView.as_view()),
 ]
 
 transporter = [

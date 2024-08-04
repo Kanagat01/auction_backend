@@ -387,3 +387,18 @@ class CompleteOrderView(APIView):
         order.make.completed()
 
         return success_with_text(OrderSerializer(order).data)
+
+
+class CancelOrderCompletionView(APIView):
+    permission_classes = [IsCustomerManagerAccount]
+
+    def post(self, request: Request):
+        serializer = CustomerGetOrderByIdSerializer(
+            data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        order: OrderModel = serializer.validated_data['order_id']
+        order.make.cancel_completion()
+
+        return success_with_text(OrderSerializer(order).data)
