@@ -156,9 +156,9 @@ class OrderModel(models.Model):
                                verbose_name='Водитель', related_name='orders',
                                null=True, blank=True)
     created_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Время создания')
+        auto_now_add=True, verbose_name='Время создания')
     updated_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Время обновления')
+        auto_now=True, verbose_name='Время обновления')
 
     # status
     status = models.CharField(max_length=300, choices=OrderStatus.choices(), verbose_name='Статус заказа',
@@ -188,7 +188,7 @@ class OrderModel(models.Model):
     temp_mode = models.CharField(null=True, blank=True,
                                  max_length=300, verbose_name='Температурный режим')
     adr = models.PositiveIntegerField(
-        null=True, blank=True, verbose_name='ADR [шт.]')
+        null=True, blank=True, verbose_name='ADR')
     transport_body_width = models.PositiveIntegerField(null=True, blank=True,
                                                        verbose_name='Ширина кузова')
     transport_body_length = models.PositiveIntegerField(null=True, blank=True,

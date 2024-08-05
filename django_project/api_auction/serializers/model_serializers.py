@@ -96,16 +96,30 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class OrderSerializer(serializers.ModelSerializer):
+class BaseOrderSerializer(serializers.ModelSerializer):
     customer_manager = CustomerManagerSerializer(read_only=True)
     transporter_manager = TransporterManagerSerializer(read_only=True)
     driver = DriverProfileSerializer(read_only=True)
-    # take offers that are not rejected
-    offers = serializers.SerializerMethodField()
-    tracking = OrderTrackingSerializer(read_only=True)
     documents = OrderDocumentSerializer(many=True, read_only=True)
     stages = OrderStageCoupleSerializer(many=True, read_only=True)
+    tracking = OrderTrackingSerializer(read_only=True)
     application_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderModel
+        fields = '__all__'
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at', 'customer_manager', 'transporter_manager', 'driver',
+                            'tracking', 'documents']
+
+    def get_application_type(self, obj):
+        try:
+            return obj.application_type.status
+        except OrderApplicationType.DoesNotExist:
+            return None
+
+
+class OrderSerializer(BaseOrderSerializer):
+    offers = serializers.SerializerMethodField()
 
     def __init__(self, *args, with_offers=True, for_order_viewer=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,12 +131,6 @@ class OrderSerializer(serializers.ModelSerializer):
             self.fields.pop("start_price")
             self.fields.pop("price_step")
             self.fields.pop("application_type")
-
-    class Meta:
-        model = OrderModel
-        fields = '__all__'
-        read_only_fields = ['id', 'status', 'created_at', 'updated_at', 'customer_manager', 'transporter_manager', 'driver',
-                            'offers', 'tracking', 'documents']
 
     def create(self, validated_data):
         customer_manager = validated_data.get('customer_manager')
@@ -143,21 +151,13 @@ class OrderSerializer(serializers.ModelSerializer):
             ).order_by('price')
         return OrderOfferSerializer(offers, many=True).data
 
-    def get_application_type(self, obj):
-        try:
-            return obj.application_type.status
-        except OrderApplicationType.DoesNotExist:
-            return None
+    class Meta(BaseOrderSerializer.Meta):
+        read_only_fields = BaseOrderSerializer.Meta.read_only_fields + \
+            ['offers']
 
 
-class OrderSerializerForTransporter(serializers.ModelSerializer):
-    customer_manager = CustomerManagerSerializer(read_only=True)
-    transporter_manager = TransporterManagerSerializer(read_only=True)
-    driver = DriverProfileSerializer(read_only=True)
-    documents = OrderDocumentSerializer(many=True, read_only=True)
-    stages = OrderStageCoupleSerializer(many=True, read_only=True)
+class OrderSerializerForTransporter(BaseOrderSerializer):
     price_data = serializers.SerializerMethodField()
-    application_type = serializers.SerializerMethodField()
 
     def __init__(self, *args, transporter_manager: TransporterManager, for_bidding: bool = False, **kwargs):
         """
@@ -172,12 +172,6 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
             self.fields.pop('price_step')
             self.fields.pop('start_price')
         self.transporter_manager = transporter_manager
-
-    class Meta:
-        model = OrderModel
-        fields = '__all__'
-        read_only_fields = ['id', 'status', 'created_at', 'updated_at', 'customer_manager', 'transporter_manager', 'driver',
-                            'offers', 'tracking', 'documents', 'price_data']
 
     def get_price_data(self, obj: OrderModel):
         offer = OrderOffer.objects.filter(
@@ -203,11 +197,9 @@ class OrderSerializerForTransporter(serializers.ModelSerializer):
             "is_best_offer": offer.price == best_offer.price,
         }
 
-    def get_application_type(self, obj):
-        try:
-            return obj.application_type.status
-        except OrderApplicationType.DoesNotExist:
-            return None
+    class Meta(BaseOrderSerializer.Meta):
+        read_only_fields = BaseOrderSerializer.Meta.read_only_fields + \
+            ['price_data']
 
 
 class OrderTransportBodyTypeSerializer(serializers.ModelSerializer):

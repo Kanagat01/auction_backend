@@ -6,6 +6,12 @@ from .getter_serializers import CustomerGetOrderByIdSerializer, TransporterGetOr
     BaseCustomerSerializer
 
 
+class EditOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderModel
+        exclude = ["id", "customer_manager"]
+
+
 class PublishOrderToSerializer(CustomerGetOrderByIdSerializer):
     publish_to = serializers.CharField()
 

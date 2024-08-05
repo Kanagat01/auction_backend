@@ -104,6 +104,16 @@ class GetOrdersView(APIView):
             'pages_total': paginator.page.paginator.num_pages,
             'current_page': paginator.page.number
         }
+
+        transport_body_types = OrderTransportBodyType.objects.all()
+        transport_load_types = OrderTransportLoadType.objects.all()
+        transport_unload_types = OrderTransportUnloadType.objects.all()
+        pre_create_order = {
+            'transport_body_types': OrderTransportBodyTypeSerializer(transport_body_types, many=True).data,
+            'transport_load_types': OrderTransportLoadTypeSerializer(transport_load_types, many=True).data,
+            'transport_unload_types': OrderTransportUnloadTypeSerializer(transport_unload_types, many=True).data,
+        }
+
         match (user_type):
             case UserTypes.CUSTOMER_COMPANY | UserTypes.CUSTOMER_MANAGER:
                 result = OrderSerializer(page, many=True).data
@@ -122,7 +132,7 @@ class GetOrdersView(APIView):
                     for_bidding=status == OrderStatus.in_bidding,
                     transporter_manager=user.transporter_manager
                 ).data
-        return success_with_text({'pagination': pagination_data, 'orders': result})
+        return success_with_text({'pagination': pagination_data, 'orders': result, "pre_create_order": pre_create_order})
 
 
 class PreCreateOrderView(APIView):
@@ -183,6 +193,73 @@ class CreateOrderView(APIView):
         return success_with_text(OrderSerializer(order).data)
 
 
+def update_stages(request: Request, order: OrderModel, stages_data: list):
+    add_stages = []
+    stage_data_dict = {}
+    for s in stages_data:
+        if "id" in s:
+            stage_data_dict[s["id"]] = s
+        else:
+            add_stages.append(s)
+
+    delete_stages = []
+    edit_stages = []
+    for stage in OrderStageCouple.objects.filter(order=order):
+        if stage.pk not in stage_data_dict.keys():
+            delete_stages.append(model_to_dict(stage))
+        else:
+            edit_stages.append(stage_data_dict[stage.pk])
+
+    for idx, stage_data in enumerate(delete_stages):
+        stage_data["order_stage_id"] = stage_data.pop("id")
+        serializer = CustomerGetOrderCoupleSerializer(
+            data=stage_data, context={'request': request})
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        delete_stages[idx] = serializer.validated_data['order_stage_id']
+
+    for idx, stage_data in enumerate(edit_stages):
+        stage_data["order_stage_id"] = stage_data.pop("id")
+        serializer = CustomerGetOrderCoupleSerializer(
+            data=stage_data, context={'request': request})
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        order_stage_id = serializer.validated_data['order_stage_id']
+
+        stage_couple = OrderStageCoupleSerializer(
+            order_stage_id, data=stage_data, partial=True)
+
+        if not stage_couple.is_valid():
+            return error_with_text(stage_couple.errors)
+
+        stage_number = stage_couple.validated_data['order_stage_number']
+        if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company,
+                                               order_stage_id.pk):
+            return error_with_text(f'order_stage_number_must_be_unique:{stage_number}')
+
+        edit_stages[idx] = stage_couple
+
+    for idx, stage_data in enumerate(add_stages):
+        stage_serializer = OrderStageCoupleSerializer(data=stage_data)
+        if not stage_serializer.is_valid():
+            return error_with_text(stage_serializer.errors)
+
+        stage_number = stage_serializer.validated_data['order_stage_number']
+        if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company):
+            return error_with_text(f'order_stage_number_must_be_unique:{stage_number}')
+
+        add_stages[idx] = stage_serializer
+
+    for s in delete_stages:
+        s.delete()
+    for s in edit_stages:
+        s.save()
+    for s in add_stages:
+        s.save(order=order)
+
+
 class EditOrderView(APIView):
     permission_classes = [IsCustomerManagerAccount]
 
@@ -197,85 +274,19 @@ class EditOrderView(APIView):
         if order.status != OrderStatus.unpublished:
             return error_with_text('You can edit only unpublished orders.')
 
-        transportation_number = order.transportation_number
-        # check if transportation number unique (within company)
-        if OrderModel.check_transportation_number(transportation_number, order.customer_manager.company, order.pk):
-            return error_with_text('transportation_number_must_be_unique')
-
         order_serializer = OrderSerializer(
             order, data=request.data, partial=True)
         if not order_serializer.is_valid():
             return error_with_text(order_serializer.errors)
 
+        transportation_number = order_serializer.validated_data["transportation_number"]
+        # check if transportation number unique (within company)
+        if OrderModel.check_transportation_number(transportation_number, order.customer_manager.company, order.pk):
+            return error_with_text('transportation_number_must_be_unique')
+
         stages_data = request.data.pop('stages', [])
-        add_stages = []
-        stage_data_dict = {}
-        for s in stages_data:
-            if "id" in s:
-                stage_data_dict[s["id"]] = s
-            else:
-                add_stages.append(s)
-
-        delete_stages = []
-        edit_stages = []
-        for stage in OrderStageCouple.objects.filter(order=order):
-            if stage.pk not in stage_data_dict.keys():
-                delete_stages.append(model_to_dict(stage))
-            else:
-                edit_stages.append(stage_data_dict[stage.pk])
-
-        for idx, stage_data in enumerate(delete_stages):
-            stage_data["order_stage_id"] = stage_data.pop("id")
-            serializer = CustomerGetOrderCoupleSerializer(
-                data=stage_data, context={'request': request})
-            if not serializer.is_valid():
-                return error_with_text(serializer.errors)
-
-            delete_stages[idx] = serializer.validated_data['order_stage_id']
-
-        for idx, stage_data in enumerate(edit_stages):
-            stage_data["order_stage_id"] = stage_data.pop("id")
-            serializer = CustomerGetOrderCoupleSerializer(
-                data=stage_data, context={'request': request})
-            if not serializer.is_valid():
-                return error_with_text(serializer.errors)
-
-            order_stage_id = serializer.validated_data['order_stage_id']
-
-            stage_couple = OrderStageCoupleSerializer(
-                order_stage_id, data=stage_data, partial=True)
-
-            if not stage_couple.is_valid():
-                return error_with_text(stage_couple.errors)
-
-            stage_number = stage_couple.validated_data['order_stage_number']
-            if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company,
-                                                   order_stage_id.pk):
-                return error_with_text(f'order_stage_number_must_be_unique:{stage_number}')
-
-            edit_stages[idx] = stage_couple
-
-        for idx, stage_data in enumerate(add_stages):
-            stage_serializer = OrderStageCoupleSerializer(data=stage_data)
-            if not stage_serializer.is_valid():
-                return error_with_text(stage_serializer.errors)
-
-            stage_number = stage_serializer.validated_data['order_stage_number']
-            if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company):
-                return error_with_text(f'order_stage_number_must_be_unique:{stage_number}')
-
-            add_stages[idx] = stage_serializer
-
-        for s in delete_stages:
-            s.delete()
-        for s in edit_stages:
-            s.save()
-        for s in add_stages:
-            s.save(order=order)
-
-        order.updated_at = timezone.now()
+        update_stages(request=request, order=order, stages_data=stages_data)
         order_serializer.save()
-
         return success_with_text(order_serializer.data)
 
 
