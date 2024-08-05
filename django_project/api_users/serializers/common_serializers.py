@@ -1,7 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from api_users.models import UserModel
+from api_users.models import UserModel, CustomerCompany, TransporterCompany, CustomerManager, TransporterManager
 
 
 class RegisterManagerSerializer(serializers.Serializer):
@@ -17,6 +17,34 @@ class RegisterManagerSerializer(serializers.Serializer):
     def validate_password(self, password):
         validate_password(password)
         return password
+
+
+class EditManagerSerializer(serializers.Serializer):
+    manager_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField(max_length=200)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'request' not in self.context:
+            raise serializers.ValidationError(
+                "Request is required in context. [Contact to developer]")
+        user = self.context['request'].user
+        if hasattr(user, 'customer_company'):
+            self.company: CustomerCompany = user.customer_company
+        elif hasattr(user, "transporter_company"):
+            self.company: TransporterCompany = user.transporter_company
+        else:
+            raise serializers.ValidationError(
+                "Request user must be a CustomerCompany or TransporterCompany. [Contact to developer]")
+
+    def validate_manager_id(self, manager_id):
+        try:
+            manager = self.company.managers.get(id=manager_id)
+            return manager
+        except [CustomerManager.DoesNotExist, TransporterManager.DoesNotExist]:
+            raise serializers.ValidationError(
+                "Manager with this id does not exist or does not belong to you")
 
 
 class EditUserSerializer(serializers.Serializer):

@@ -119,3 +119,24 @@ class RegisterManagerForCompany(APIView):
             user.set_password(password)
             user.save()
             return success_with_text(TransporterManagerSerializer(ins, from_company=True).data)
+
+
+class EditManager(APIView):
+    permission_classes = [IsCustomerCompanyAccount |
+                          IsTransporterCompanyAccount]
+
+    def post(self, request: Request):
+        serializer = EditManagerSerializer(
+            data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        manager = serializer.validated_data["manager_id"]
+        user: UserModel = manager.user
+        user.email = serializer.validated_data['email']
+        user.full_name = serializer.validated_data['full_name']
+        user.save()
+        if user.user_type == UserTypes.CUSTOMER_MANAGER:
+            return success_with_text(CustomerManagerSerializer(manager, from_company=True).data)
+        else:
+            return success_with_text(TransporterManagerSerializer(manager, from_company=True).data)
