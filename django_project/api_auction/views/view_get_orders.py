@@ -18,14 +18,17 @@ class PaginationClass(PageNumberPagination):
     page_size = 20
 
 
-class GetOrderView(APIView):
+class FindCargoView(APIView):
     permission_classes = ()
 
-    def get(self, request, transportation_number):
+    def get(self, request, transportation_number: int, machine_number: str):
         try:
+            driver = DriverProfile.objects.get(machine_number=machine_number)
             order = OrderModel.objects.get(
-                transportation_number=transportation_number)
+                transportation_number=transportation_number, driver=driver)
             return success_with_text(OrderSerializer(order, for_order_viewer=(not request.user.is_authenticated)).data)
+        except DriverProfile.DoesNotExist:
+            return error_with_text("driver_not_found")
         except OrderModel.DoesNotExist:
             return error_with_text("order_not_found")
 

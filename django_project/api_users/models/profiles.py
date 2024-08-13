@@ -105,7 +105,7 @@ class DriverProfile(models.Model):
     machine_data = models.CharField(
         max_length=300, verbose_name='Данные авто')
     machine_number = models.CharField(
-        max_length=20, verbose_name='Номер авто')
+        max_length=20, unique=True, verbose_name='Номер авто')
 
     class Meta:
         verbose_name = 'Профиль водителя'

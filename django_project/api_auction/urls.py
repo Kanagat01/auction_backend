@@ -29,7 +29,8 @@ transporter = [
 ]
 
 urlpatterns = [
-    path("get_order/<int:transportation_number>/", GetOrderView.as_view()),
+    path("find_cargo/<int:transportation_number>/<str:machine_number>/",
+         FindCargoView.as_view()),
     path("get_orders/", GetOrdersView.as_view()),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
