@@ -139,9 +139,12 @@ class OrderSerializer(BaseOrderSerializer):
         return OrderModel.objects.create(**validated_data)
 
     def get_offers(self, obj: OrderModel):
-        if obj.status == OrderStatus.being_executed:
-            offers = [OrderOffer.objects.filter(
-                status=OrderOfferStatus.accepted).order_by('-created_at').first()]
+        if obj.status in [OrderStatus.being_executed, OrderStatus.completed]:
+            offers = [
+                OrderOffer.objects.filter(
+                    order=obj, status=OrderOfferStatus.accepted
+                ).order_by('price').first()
+            ]
 
         else:
             offers = OrderOffer.objects.filter(
@@ -174,11 +177,25 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
         self.transporter_manager = transporter_manager
 
     def get_price_data(self, obj: OrderModel):
+        if obj.status in [OrderStatus.being_executed, OrderStatus.completed]:
+            offer = OrderOffer.objects.filter(
+                order=obj,
+                transporter_manager__in=self.transporter_manager.company.managers.all(),
+                status=OrderOfferStatus.accepted
+            ).order_by('price').first()
+            return {
+                "offer_id": offer.id,
+                "price": offer.price,
+                "current_price": offer.price,
+                "is_best_offer": True,
+            }
+
         offer = OrderOffer.objects.filter(
             order=obj,
-            transporter_manager=self.transporter_manager,
-            status=OrderOfferStatus.none if obj.status != OrderStatus.being_executed else OrderOfferStatus.accepted
-        ).first()
+            transporter_manager__in=self.transporter_manager.company.managers.all(),
+            status=OrderOfferStatus.none
+        ).order_by('price').first()
+
         if self.for_bidding:
             if offer is None:
                 return None
@@ -194,6 +211,7 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
         return {
             "offer_id": offer.id,
             "price": offer.price,
+            "current_price": best_offer.price,
             "is_best_offer": offer.price == best_offer.price,
         }
 

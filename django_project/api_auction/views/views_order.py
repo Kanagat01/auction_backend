@@ -1,138 +1,13 @@
 from django.forms import model_to_dict
-from django.db.models import OuterRef, Subquery, Q, Value, CharField
-from django.db.models.functions import Concat
+from django.db.models import Max
 from rest_framework.views import APIView
 from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
 
 from api_auction.models import *
 from api_auction.serializers import *
 from api_notification.models import Notification, NotificationType
-from api_users.models.user import UserModel, UserTypes
-from api_users.permissions.customer_permissions import IsCustomerCompanyAccount, IsCustomerManagerAccount
-from api_users.permissions.transporter_permissions import IsTransporterCompanyAccount, IsTransporterManagerAccount
+from api_users.permissions.customer_permissions import IsCustomerManagerAccount
 from backend.global_functions import success_with_text, error_with_text
-
-
-class PaginationClass(PageNumberPagination):
-    page_size = 20
-
-
-class GetOrderView(APIView):
-    permission_classes = ()
-
-    def get(self, request, transportation_number):
-        try:
-            order = OrderModel.objects.get(
-                transportation_number=transportation_number)
-            return success_with_text(OrderSerializer(order, for_order_viewer=True).data)
-        except OrderModel.DoesNotExist:
-            return error_with_text("order_not_found")
-
-
-class GetOrdersView(APIView):
-    permission_classes = [IsCustomerCompanyAccount | IsCustomerManagerAccount |
-                          IsTransporterCompanyAccount | IsTransporterManagerAccount]
-
-    def get(self, request: Request) -> Response:
-        user: UserModel = request.user
-        user_type: UserTypes = request.user.user_type
-
-        status_lst = [OrderStatus.cancelled, OrderStatus.in_auction, OrderStatus.in_bidding,
-                      OrderStatus.in_direct, OrderStatus.being_executed, OrderStatus.completed]
-        if user_type in [UserTypes.CUSTOMER_COMPANY, UserTypes.CUSTOMER_MANAGER]:
-            status_lst.append(OrderStatus.unpublished)
-
-        status = request.query_params.get('status')
-        if status not in status_lst:
-            return error_with_text("invalid_order_status")
-        if status == OrderStatus.being_executed:
-            status_filter = Q(status=OrderStatus.being_executed) | Q(
-                status=OrderStatus.completed)
-        else:
-            status_filter = Q(status=status)
-
-        filter_kwargs = {}
-        transportation_number = request.query_params.get(
-            'transportation_number')
-        if transportation_number and transportation_number.isdigit():
-            filter_kwargs["transportation_number__icontains"] = transportation_number
-
-        match (user_type):
-            case UserTypes.CUSTOMER_MANAGER:
-                filter_kwargs["customer_manager"] = user.customer_manager
-            case UserTypes.CUSTOMER_COMPANY:
-                filter_kwargs['customer_manager__company'] = user.customer_company
-            case UserTypes.TRANSPORTER_MANAGER:
-                filter_kwargs['customer_manager__company__in'] = user.transporter_manager.company.allowed_customer_companies.all()
-            case UserTypes.TRANSPORTER_COMPANY:
-                filter_kwargs['customer_manager__company__in'] = user.transporter_company.allowed_customer_companies.all()
-
-        orders = OrderModel.objects.filter(
-            status_filter, **filter_kwargs).order_by("-updated_at")
-        city_from = request.query_params.get('city_from')
-
-        if city_from:
-            earliest_load_stage_subquery = OrderLoadStage.objects.filter(
-                order_couple__order=OuterRef('pk')
-            ).annotate(
-                datetime=Concat('date', Value(
-                    ' '), 'time_start', output_field=CharField())
-            ).order_by('datetime').values('city')[:1]
-            orders = orders.annotate(
-                earliest_load_stage_city=Subquery(earliest_load_stage_subquery)
-            ).filter(earliest_load_stage_city__icontains=city_from)
-
-        city_to = request.query_params.get('city_to')
-        if city_to:
-            latest_unload_stage_subquery = OrderUnloadStage.objects.filter(
-                order_couple__order=OuterRef('pk')
-            ).annotate(
-                datetime_concat=Concat('date', Value(
-                    ' '), 'time_end', output_field=CharField())
-            ).order_by('-datetime_concat').values('city')[:1]
-
-            orders = orders.annotate(
-                latest_unload_stage_city=Subquery(latest_unload_stage_subquery)
-            ).filter(latest_unload_stage_city__icontains=city_to)
-
-        paginator = PaginationClass()
-        page = paginator.paginate_queryset(orders, request)
-
-        pagination_data = {
-            'pages_total': paginator.page.paginator.num_pages,
-            'current_page': paginator.page.number
-        }
-
-        transport_body_types = OrderTransportBodyType.objects.all()
-        transport_load_types = OrderTransportLoadType.objects.all()
-        transport_unload_types = OrderTransportUnloadType.objects.all()
-        pre_create_order = {
-            'transport_body_types': OrderTransportBodyTypeSerializer(transport_body_types, many=True).data,
-            'transport_load_types': OrderTransportLoadTypeSerializer(transport_load_types, many=True).data,
-            'transport_unload_types': OrderTransportUnloadTypeSerializer(transport_unload_types, many=True).data,
-        }
-
-        match (user_type):
-            case UserTypes.CUSTOMER_COMPANY | UserTypes.CUSTOMER_MANAGER:
-                result = OrderSerializer(page, many=True).data
-            case UserTypes.TRANSPORTER_COMPANY:
-                result = [
-                    OrderSerializerForTransporter(
-                        order,
-                        for_bidding=status == OrderStatus.in_bidding,
-                        transporter_manager=order.transporter_manager
-                    ).data for order in page if order.transporter_manager is not None
-                ]
-            case UserTypes.TRANSPORTER_MANAGER:
-                result = OrderSerializerForTransporter(
-                    page,
-                    many=True,
-                    for_bidding=status == OrderStatus.in_bidding,
-                    transporter_manager=user.transporter_manager
-                ).data
-        return success_with_text({'pagination': pagination_data, 'orders': result, "pre_create_order": pre_create_order})
 
 
 class PreCreateOrderView(APIView):
@@ -143,12 +18,29 @@ class PreCreateOrderView(APIView):
         transport_body_types = OrderTransportBodyType.objects.all()
         transport_load_types = OrderTransportLoadType.objects.all()
         transport_unload_types = OrderTransportUnloadType.objects.all()
-
-        return success_with_text({
+        response = {
             'transport_body_types': OrderTransportBodyTypeSerializer(transport_body_types, many=True).data,
             'transport_load_types': OrderTransportLoadTypeSerializer(transport_load_types, many=True).data,
             'transport_unload_types': OrderTransportUnloadTypeSerializer(transport_unload_types, many=True).data,
-        })
+        }
+        transportation_number = request.query_params.get(
+            'transportation_number')
+        if (transportation_number and transportation_number.isdigit()):
+            try:
+                order = OrderModel.objects.get(
+                    transportation_number=int(transportation_number))
+                response["order"] = OrderSerializer(order).data
+            except OrderModel.DoesNotExist:
+                return error_with_text("order_not_found")
+        else:
+            max_transportation_number = OrderModel.objects.aggregate(
+                Max('transportation_number'))['transportation_number__max']
+            response["max_transportation_number"] = max_transportation_number if max_transportation_number else 1
+
+        max_order_stage_number = OrderStageCouple.objects.aggregate(
+            Max('order_stage_number'))['order_stage_number__max']
+        response["max_order_stage_number"] = max_order_stage_number if max_order_stage_number else 1
+        return success_with_text(response)
 
 
 class CreateOrderView(APIView):

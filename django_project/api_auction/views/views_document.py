@@ -22,8 +22,8 @@ class AddDocumentView(APIView):
                 data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             order: OrderModel = serializer.validated_data['order_id']
-            if order.transporter_manager != request.user.transporter_manager:
-                return error_with_text('OrderModel with this ID does not belong to you.')
+            if order.transporter_manager.company != request.user.transporter_manager.company:
+                return error_with_text('OrderModel with this ID does not belong to your company.')
 
         request.data['order'] = order.pk
         document_serializer = OrderDocumentSerializer(data=request.data)
