@@ -30,8 +30,8 @@ transporter = [
 
 urlpatterns = [
     path("find_cargo/<int:transportation_number>/<str:machine_number>/",
-         FindCargoView.as_view()),
-    path("get_orders/", GetOrdersView.as_view()),
+         views_customer.FindCargoView.as_view()),
+    path("get_orders/", views_customer.GetOrdersView.as_view()),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
 ]

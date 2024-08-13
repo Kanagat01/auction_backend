@@ -1,4 +1,3 @@
-from .view_get_orders import *
 from .views_order import *
 from .views_offer import *
 from .views_order_stages import *

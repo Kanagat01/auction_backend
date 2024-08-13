@@ -23,23 +23,26 @@ class PreCreateOrderView(APIView):
             'transport_load_types': OrderTransportLoadTypeSerializer(transport_load_types, many=True).data,
             'transport_unload_types': OrderTransportUnloadTypeSerializer(transport_unload_types, many=True).data,
         }
+        orders = OrderModel.objects.filter(
+            customer_manager__company=request.user.customer_manager.company
+        )
         transportation_number = request.query_params.get(
             'transportation_number')
         if (transportation_number and transportation_number.isdigit()):
             try:
-                order = OrderModel.objects.get(
-                    transportation_number=int(transportation_number))
+                order = OrderModel.objects.get(customer_manager__company=request.user.customer_manager.company,
+                                               transportation_number=int(transportation_number))
                 response["order"] = OrderSerializer(order).data
             except OrderModel.DoesNotExist:
                 return error_with_text("order_not_found")
         else:
-            max_transportation_number = OrderModel.objects.aggregate(
-                Max('transportation_number'))['transportation_number__max']
-            response["max_transportation_number"] = max_transportation_number if max_transportation_number else 1
+            max_transportation_number = orders.aggregate(Max('transportation_number'))[
+                'transportation_number__max']
+            response["max_transportation_number"] = max_transportation_number if max_transportation_number else 0
 
-        max_order_stage_number = OrderStageCouple.objects.aggregate(
+        max_order_stage_number = OrderStageCouple.objects.filter(order__in=orders).aggregate(
             Max('order_stage_number'))['order_stage_number__max']
-        response["max_order_stage_number"] = max_order_stage_number if max_order_stage_number else 1
+        response["max_order_stage_number"] = max_order_stage_number if max_order_stage_number else 0
         return success_with_text(response)
 
 

@@ -25,7 +25,8 @@ class CustomerGetOrderByIdSerializer(BaseCustomerSerializer):
     def validate_order_id(self, value):
 
         try:
-            a: OrderModel = OrderModel.objects.get(id=value)
+            a: OrderModel = OrderModel.objects.get(
+                id=value, customer_manager__company=self.customer_manager.company)
         except OrderModel.DoesNotExist:
             raise serializers.ValidationError(
                 "OrderModel with this ID does not exist.")
