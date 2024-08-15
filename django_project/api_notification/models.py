@@ -35,6 +35,7 @@ class Notification(models.Model):
     class Meta:
         verbose_name = "Уведомление"
         verbose_name_plural = "Уведомления"
+        ordering = ["created_at"]
 
     def save(self, *args, **kwargs):
         super(Notification, self).save(*args, **kwargs)
