@@ -1,5 +1,6 @@
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
+from django.core.validators import MinValueValidator
 from rest_framework.exceptions import ValidationError
 
 from api_users.models import CustomerManager, TransporterManager, CustomerCompany, DriverProfile
@@ -189,12 +190,12 @@ class OrderModel(models.Model):
                                  max_length=300, verbose_name='Температурный режим')
     adr = models.PositiveIntegerField(
         null=True, blank=True, verbose_name='ADR')
-    transport_body_width = models.PositiveIntegerField(null=True, blank=True,
-                                                       verbose_name='Ширина кузова')
-    transport_body_length = models.PositiveIntegerField(null=True, blank=True,
-                                                        verbose_name='Длина кузова')
-    transport_body_height = models.PositiveIntegerField(null=True, blank=True,
-                                                        verbose_name='Высота кузова')
+    transport_body_width = models.FloatField(
+        null=True, blank=True, verbose_name='Ширина кузова', validators=[MinValueValidator(0.0)])
+    transport_body_length = models.FloatField(
+        null=True, blank=True, verbose_name='Длина кузова', validators=[MinValueValidator(0.0)])
+    transport_body_height = models.FloatField(
+        null=True, blank=True, verbose_name='Высота кузова', validators=[MinValueValidator(0.0)])
 
     # relationships fields:
     # stages

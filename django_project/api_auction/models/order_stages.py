@@ -1,5 +1,6 @@
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
+from django.core.validators import MinValueValidator
 from api_auction.models import get_unix_time
 from api_users.models import CustomerCompany
 
@@ -15,8 +16,10 @@ class OrderStageCouple(models.Model):
         default=get_unix_time, verbose_name='Номер поставки')
     cargo = models.CharField(
         max_length=300, verbose_name='Груз')  # Maybe Foreign Key!
-    weight = models.PositiveIntegerField(verbose_name='Вес')
-    volume = models.PositiveIntegerField(verbose_name='Объем')
+    weight = models.FloatField(verbose_name='Вес', validators=[
+                               MinValueValidator(0.0)])
+    volume = models.FloatField(verbose_name='Объем',  validators=[
+                               MinValueValidator(0.0)])
 
     # relation fields
     # load_stage = models.OneToOneField('OrderLoadStage', on_delete=models.CASCADE, verbose_name='Этап загрузки')
