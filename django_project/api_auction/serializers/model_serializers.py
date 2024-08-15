@@ -147,11 +147,16 @@ class OrderSerializer(BaseOrderSerializer):
             ]
 
         else:
+            if obj.status == OrderStatus.in_direct:
+                status_filter = Q(status=OrderOfferStatus.none) | Q(
+                    status=OrderOfferStatus.rejected)
+            elif obj.status == OrderStatus.cancelled:
+                status_filter = Q(status=OrderOfferStatus.accepted)
+            else:
+                status_filter = Q(status=OrderOfferStatus.none)
+
             offers = OrderOffer.objects.filter(
-                Q(order=obj) &
-                (Q(status=OrderOfferStatus.none)
-                 if obj.status != OrderStatus.in_direct else Q(status=OrderOfferStatus.none) | Q(status=OrderOfferStatus.rejected))
-            ).order_by('price')
+                Q(order=obj) & status_filter).order_by('price')
         return OrderOfferSerializer(offers, many=True).data
 
     class Meta(BaseOrderSerializer.Meta):
@@ -177,7 +182,7 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
         self.transporter_manager = transporter_manager
 
     def get_price_data(self, obj: OrderModel):
-        if obj.status in [OrderStatus.being_executed, OrderStatus.completed]:
+        if obj.status in [OrderStatus.being_executed, OrderStatus.completed, OrderStatus.cancelled]:
             offer = OrderOffer.objects.filter(
                 order=obj,
                 transporter_manager__in=self.transporter_manager.company.managers.all(),

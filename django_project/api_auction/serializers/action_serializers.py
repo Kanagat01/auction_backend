@@ -1,7 +1,8 @@
+from django.contrib.contenttypes.models import ContentType
 from api_auction.models import *
 from rest_framework import serializers
 
-from api_users.models import TransporterCompany, DriverProfile
+from api_users.models import TransporterCompany, DriverProfile, FullNameModel
 from .getter_serializers import CustomerGetOrderByIdSerializer, TransporterGetOrderByIdSerializer, \
     BaseCustomerSerializer
 
@@ -60,6 +61,7 @@ class AddOfferToOrderSerializer(TransporterGetOrderByIdSerializer):
 
 class AddDriverDataSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField()
+    machine_number = serializers.CharField()
 
     class Meta:
         model = DriverProfile
@@ -68,8 +70,44 @@ class AddDriverDataSerializer(serializers.ModelSerializer):
 
     def validate_full_name(self, value):
         if value == "":
-            raise serializers.ValidationError("full_name required")
+            raise serializers.ValidationError("required")
         elif len(value) > 300:
-            raise serializers.ValidationError(
-                "full_name should be less than 300 symbols")
+            raise serializers.ValidationError("max_length is 300 symbols")
         return value
+
+    def validate_machine_number(self, value):
+        if value == "":
+            raise serializers.ValidationError("required")
+        elif len(value) > 20:
+            raise serializers.ValidationError("max_length is 20 symbols")
+
+        instance = getattr(self, 'instance', None)
+        if instance is not None:
+            if DriverProfile.objects.exclude(pk=instance.pk).filter(machine_number=value).exists():
+                raise serializers.ValidationError("must_be_unique")
+        else:
+            if DriverProfile.objects.filter(machine_number=value).exists():
+                raise serializers.ValidationError("must_be_unique")
+
+        return value
+
+    def create(self, validated_data):
+        full_name = validated_data.pop('full_name')
+        full_name_instance = FullNameModel.objects.create(full_name=full_name)
+
+        driver = DriverProfile.objects.create(
+            **validated_data,
+            content_type=ContentType.objects.get_for_model(full_name_instance),
+            object_id=full_name_instance.id
+        )
+        return driver
+
+    def update(self, instance, validated_data):
+        full_name = validated_data.pop('full_name', None)
+        if full_name:
+            instance.user_or_fullname.full_name = full_name
+            instance.user_or_fullname.save()
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance

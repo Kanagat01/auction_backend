@@ -100,8 +100,8 @@ class DriverProfile(models.Model):
         default=datetime.date.today, verbose_name='Дата рождения')
     passport_number = models.CharField(
         max_length=20, verbose_name='Номер паспорта')
-    phone_number = models.CharField(
-        validators=[PhoneNumberValidator()], max_length=17, verbose_name='Телефон')
+    phone_number = models.CharField(max_length=17, unique=True,
+                                    validators=[PhoneNumberValidator()], verbose_name='Телефон')
     machine_data = models.CharField(
         max_length=300, verbose_name='Данные авто')
     machine_number = models.CharField(

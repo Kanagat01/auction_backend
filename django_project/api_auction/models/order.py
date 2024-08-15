@@ -1,10 +1,12 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 
 from api_users.models import CustomerManager, TransporterManager, CustomerCompany, DriverProfile
 from api_auction.models import order_transport
+from api_notification.models import Notification, NotificationType
 
 
 def get_unix_time():
@@ -50,17 +52,18 @@ class _OrderMake:
         Отменить заказ
         Если заказ уже завершен - нельзя отменить
 
-        ВНИМАНИЕ: удаляет все предложения перевозчиков
-
         :return:
         """
         if self.order.status == OrderStatus.completed:
             raise ValidationError('order_is_completed')
 
-        for i in self.order.offers.all():
-            i.delete()
-
-        self.order.transporter_manager = None
+        if self.order.status == OrderStatus.being_executed:
+            Notification.objects.create(
+                user=self.order.transporter_manager.user,
+                title=f"Заказ",
+                description=f"Транспортировка №{self.order.transportation_number} была отменена заказчиком",
+                type=NotificationType.ORDER_CANCELLED
+            )
         self.order.status = OrderStatus.cancelled
         self.order.save()
 
@@ -210,6 +213,16 @@ class OrderModel(models.Model):
 
     def __str__(self):
         return f'{self.id} Заказ'
+
+    def clean(self):
+        if self.check_transportation_number(self.transportation_number, self.customer_manager.company, self.pk):
+            raise DjangoValidationError({
+                'transportation_number': 'Должен быть уникальным для компании',
+            })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     @property
     def make(self):

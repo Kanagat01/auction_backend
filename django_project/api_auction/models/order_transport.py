@@ -1,9 +1,9 @@
-from django.utils import timezone
 from django.db import models
 
 
 class OrderTransportBodyType(models.Model):
-    name = models.CharField(max_length=300, verbose_name='Название типа кузова транспорта')
+    name = models.CharField(
+        max_length=300, verbose_name='Название типа кузова транспорта')
 
     class Meta:
         verbose_name = 'Тип кузова транспорта'
@@ -14,7 +14,8 @@ class OrderTransportBodyType(models.Model):
 
 
 class OrderTransportLoadType(models.Model):
-    name = models.CharField(max_length=300, verbose_name='Название типа загрузки транспорта')
+    name = models.CharField(
+        max_length=300, verbose_name='Название типа загрузки транспорта')
 
     class Meta:
         verbose_name = 'Тип загрузки транспорта'
@@ -25,7 +26,8 @@ class OrderTransportLoadType(models.Model):
 
 
 class OrderTransportUnloadType(models.Model):
-    name = models.CharField(max_length=300, verbose_name='Название типа разгрузки транспорта')
+    name = models.CharField(
+        max_length=300, verbose_name='Название типа разгрузки транспорта')
 
     class Meta:
         verbose_name = 'Тип выгрузки транспорта'

@@ -10,6 +10,7 @@ class NotificationType:
     NEW_ORDER_IN_BIDDING = 'new_order_in_bidding'
     NEW_ORDER_IN_DIRECT = 'new_order_in_direct'
     NEW_ORDER_BEING_EXECUTED = 'new_order_being_executed'
+    ORDER_CANCELLED = 'order_cancelled'
 
     CHOICES = [
         (INFO, 'Информационная'),
@@ -17,6 +18,7 @@ class NotificationType:
         (NEW_ORDER_IN_BIDDING, 'Новый заказ в торгах'),
         (NEW_ORDER_IN_DIRECT, 'Новый заказ назначен напрямую'),
         (NEW_ORDER_BEING_EXECUTED, 'Новый заказ принят в исполнение'),
+        (ORDER_CANCELLED, 'Заказ отменен'),
     ]
 
 
