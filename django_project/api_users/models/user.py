@@ -26,12 +26,12 @@ class UserTypes:
 
 class UserModel(AbstractUser):
     email = models.EmailField(
-        unique=True, verbose_name='Электронная почта', max_length=300)
+        unique=True, blank=True, null=True,  verbose_name='Электронная почта', max_length=300)
     blocked = models.BooleanField(default=False, verbose_name='Заблокирован')
     user_type = models.CharField(
         max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
     full_name = models.CharField(max_length=200, )
-    REQUIRED_FIELDS = ['full_name', 'user_type', 'email']
+    REQUIRED_FIELDS = ['full_name', 'user_type']
 
     # relationship fields:
     # customer_company

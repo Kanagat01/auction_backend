@@ -13,7 +13,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 
 class LogInSerializer(serializers.Serializer):
-    email = serializers.CharField(max_length=200)
+    username = serializers.CharField(max_length=200)
     password = serializers.CharField(max_length=200)
 
 

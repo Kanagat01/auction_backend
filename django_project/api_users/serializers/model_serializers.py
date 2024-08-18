@@ -2,12 +2,6 @@ from api_users.models import *
 from rest_framework import serializers
 
 
-class FullNameModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FullNameModel
-        exclude = ['id']
-
-
 class UserModelSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='id', read_only=True)
 
@@ -104,17 +98,11 @@ class TransporterManagerSerializer(serializers.ModelSerializer):
 
 class DriverProfileSerializer(serializers.ModelSerializer):
     driver_id = serializers.IntegerField(source='id', read_only=True)
-    user_or_fullname = serializers.SerializerMethodField()
-    companies = TransporterCompanySerializer(many=True, from_manager=True)
+    user = UserModelSerializer()
 
     class Meta:
         model = DriverProfile
         exclude = ['id', 'content_type', 'object_id']
-
-    def get_user_or_fullname(self, obj):
-        if obj.content_type.model == 'usermodel':
-            return UserModelSerializer(obj.user_or_fullname).data
-        return FullNameModelSerializer(obj.user_or_fullname).data
 
 
 class OrderViewerSerializer(serializers.ModelSerializer):

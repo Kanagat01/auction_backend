@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from api_auction.models import *
 from rest_framework import serializers
 
-from api_users.models import TransporterCompany, DriverProfile, FullNameModel
+from api_users.models import TransporterCompany, DriverProfile, UserModel, UserTypes
 from .getter_serializers import CustomerGetOrderByIdSerializer, TransporterGetOrderByIdSerializer, \
     BaseCustomerSerializer
 
@@ -65,8 +65,7 @@ class AddDriverDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DriverProfile
-        fields = ['machine_data', 'machine_number',
-                  'passport_number', 'phone_number', 'full_name']
+        exclude = ['birth_date', 'user']
 
     def validate_full_name(self, value):
         if value == "":
@@ -93,20 +92,19 @@ class AddDriverDataSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         full_name = validated_data.pop('full_name')
-        full_name_instance = FullNameModel.objects.create(full_name=full_name)
-
-        driver = DriverProfile.objects.create(
-            **validated_data,
-            content_type=ContentType.objects.get_for_model(full_name_instance),
-            object_id=full_name_instance.id
+        user = UserModel.objects.create_user(
+            full_name=full_name,
+            username=validated_data['phone_number'],
+            user_type=UserTypes.DRIVER,
         )
+        driver = DriverProfile.objects.create(user=user, **validated_data)
         return driver
 
     def update(self, instance, validated_data):
         full_name = validated_data.pop('full_name', None)
         if full_name:
-            instance.user_or_fullname.full_name = full_name
-            instance.user_or_fullname.save()
+            instance.user.full_name = full_name
+            instance.user.save()
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

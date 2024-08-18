@@ -70,7 +70,7 @@ class Login(APIView):
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
-        username = serializer.validated_data['email']
+        username = serializer.validated_data['username']
         password = serializer.validated_data['password']
 
         user: UserModel = authenticate(username=username, password=password)
