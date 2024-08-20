@@ -26,8 +26,11 @@ customer = [
          DeleteTransporterFromAllowedCompanies.as_view()),
 ]
 
-transporter = [
+transporter = []
 
+driver = [
+    path('request_phone_change/', RequestPhoneNumberChangeView.as_view()),
+    path('confirm_phone_change/', ConfirmPhoneNumberChangeView.as_view()),
 ]
 
 urlpatterns = [
@@ -35,4 +38,5 @@ urlpatterns = [
     path('common/', include(common)),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
+    path('driver/', include(driver)),
 ]

@@ -1,4 +1,3 @@
-
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request

@@ -1,3 +1,5 @@
+import string
+import random
 import datetime
 from django.db import models
 from django.core.validators import RegexValidator
@@ -34,6 +36,17 @@ class DriverProfile(models.Model):
 
     def __str__(self):
         return f'{self.pk} Профиль водителя - [{self.user.full_name}]'
+
+
+class PhoneNumberChangeRequest(models.Model):
+    driver = models.OneToOneField(DriverProfile, on_delete=models.CASCADE)
+    new_phone_number = models.CharField(max_length=15)
+    confirmation_code = models.CharField(max_length=4)
+    created_at = models.DateTimeField(auto_now=True)
+
+    def generate_code(self):
+        self.confirmation_code = ''.join(random.choices(string.digits, k=4))
+        self.save()
 
 
 class CustomerCompany(models.Model):

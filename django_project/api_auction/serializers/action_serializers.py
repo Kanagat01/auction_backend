@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from api_auction.models import *
 from rest_framework import serializers
 
