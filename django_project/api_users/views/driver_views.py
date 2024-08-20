@@ -43,9 +43,6 @@ class ConfirmPhoneNumberChangeView(APIView):
             'confirmation_code']
 
         driver: DriverProfile = phone_change_request.driver
-        driver.user.username = phone_change_request.new_phone_number
-        driver.user.save()
-
         driver.phone_number = phone_change_request.new_phone_number
         driver.save()
         phone_change_request.delete()

@@ -26,13 +26,19 @@ class DriverProfile(models.Model):
     phone_number = models.CharField(max_length=17, unique=True,
                                     validators=[PhoneNumberValidator()], verbose_name='Телефон')
     machine_data = models.CharField(
-        max_length=300, verbose_name='Данные авто')
+        max_length=300, verbose_name='Машина')
     machine_number = models.CharField(
-        max_length=20, unique=True, verbose_name='Номер авто')
+        max_length=20, unique=True, verbose_name='Номер машины')
 
     class Meta:
         verbose_name = 'Профиль водителя'
         verbose_name_plural = 'Профили водителей'
+
+    def save(self, *args, **kwargs):
+        if self.phone_number and self.user.username != self.phone_number:
+            self.user.username = self.phone_number
+            self.user.save()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} Профиль водителя - [{self.user.full_name}]'

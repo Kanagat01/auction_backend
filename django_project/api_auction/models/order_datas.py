@@ -2,7 +2,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from api_users.models import TransporterManager
+from api_users.models import TransporterManager, UserModel
 from .order import OrderModel
 
 
@@ -44,6 +44,8 @@ class OrderDocument(models.Model):
                               verbose_name='Заказ', related_name='documents')
 
     file = models.FileField(upload_to='documents/', verbose_name='Файл')
+    user = models.ForeignKey(UserModel, on_delete=models.SET_NULL,
+                             null=True, verbose_name='Пользователь')
     created_at = models.DateTimeField(
         default=timezone.now, verbose_name='Время создания')
 

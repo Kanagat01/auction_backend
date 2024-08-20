@@ -28,10 +28,15 @@ transporter = [
     path('add_driver_data/', views_transporter.AddDriverData.as_view())
 ]
 
+driver = [
+    path('get_order/', views_driver.GetOrder.as_view()),
+]
+
 urlpatterns = [
     path("find_cargo/<int:transportation_number>/<str:machine_number>/",
          views_customer.FindCargoView.as_view()),
     path("get_orders/", views_customer.GetOrdersView.as_view()),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
+    path('driver/', include(driver)),
 ]

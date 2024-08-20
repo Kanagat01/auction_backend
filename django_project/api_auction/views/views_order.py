@@ -85,7 +85,19 @@ class CreateOrderView(APIView):
         for stage in stages:
             order.save()
             stage.save(order=order)
-        return success_with_text(OrderSerializer(order).data)
+
+        orders = OrderModel.objects.filter(
+            customer_manager__company=request.user.customer_manager.company
+        )
+        max_transportation_number = orders.aggregate(Max('transportation_number'))[
+            'transportation_number__max']
+        max_order_stage_number = OrderStageCouple.objects.filter(order__in=orders).aggregate(
+            Max('order_stage_number'))['order_stage_number__max']
+
+        return success_with_text({
+            "max_transportation_number": max_transportation_number if max_transportation_number else 0,
+            "max_order_stage_number": max_order_stage_number if max_order_stage_number else 0
+        })
 
 
 def update_stages(request: Request, order: OrderModel, stages_data: list):
@@ -182,7 +194,13 @@ class EditOrderView(APIView):
         stages_data = request.data.pop('stages', [])
         update_stages(request=request, order=order, stages_data=stages_data)
         order_serializer.save()
-        return success_with_text(order_serializer.data)
+
+        orders = OrderModel.objects.filter(
+            customer_manager__company=request.user.customer_manager.company
+        )
+        max_order_stage_number = OrderStageCouple.objects.filter(order__in=orders).aggregate(
+            Max('order_stage_number'))['order_stage_number__max']
+        return success_with_text({"order": order_serializer.data, "max_order_stage_number": max_order_stage_number})
 
 
 class CancelOrderView(APIView):

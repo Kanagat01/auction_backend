@@ -33,10 +33,15 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
 
 
 class OrderDocumentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderDocument
         exclude = ['order']
         read_only_fields = ['created_at']
+
+    def get_user(self, obj: OrderDocument):
+        return obj.user.full_name if obj.user else None
 
 
 class OrderLoadStageSerializer(serializers.ModelSerializer):
@@ -173,9 +178,6 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
         """
         super().__init__(*args, **kwargs)
         self.for_bidding = for_bidding
-        if transporter_manager is None:
-            raise serializers.ValidationError(
-                "transporter_manager is required")
         if for_bidding:
             self.fields.pop('price_step')
             self.fields.pop('start_price')
@@ -223,6 +225,23 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
     class Meta(BaseOrderSerializer.Meta):
         read_only_fields = BaseOrderSerializer.Meta.read_only_fields + \
             ['price_data']
+
+
+class OrderSerilizerForDriver(serializers.ModelSerializer):
+    documents = serializers.SerializerMethodField()
+    stages = OrderStageCoupleSerializer(many=True, read_only=True)
+
+    def __init__(self, *args, driver: DriverProfile, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.driver = driver
+
+    class Meta:
+        model = OrderModel
+        fields = ['transportation_number', 'stages', 'documents']
+
+    def get_documents(self, obj: OrderModel):
+        documents = obj.documents.filter(user=self.driver.user)
+        return OrderDocumentSerializer(documents, many=True).data
 
 
 class OrderTransportBodyTypeSerializer(serializers.ModelSerializer):
