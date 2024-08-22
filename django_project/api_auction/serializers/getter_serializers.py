@@ -1,6 +1,5 @@
 from api_auction.models import *
 from rest_framework import serializers
-from rest_framework.request import Request
 
 
 class BaseCustomerSerializer(serializers.Serializer):
@@ -47,6 +46,26 @@ class CustomerGetOrderCoupleSerializer(BaseCustomerSerializer):
         return a
 
 
+class DriverGetOrderCoupleSerializer(serializers.Serializer):
+    order_stage_id = serializers.IntegerField()
+
+    def __init__(self, driver: DriverProfile, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.driver = driver
+
+    def validate_order_stage_id(self, value):
+        try:
+            order_stage_couple: OrderStageCouple = OrderStageCouple.objects.get(
+                id=value)
+            if order_stage_couple.order.driver != self.driver:
+                raise serializers.ValidationError(
+                    "order_stage_couple does not belong to you")
+        except OrderStageCouple.DoesNotExist:
+            raise serializers.ValidationError(
+                "order_stage_couple does not exist")
+        return order_stage_couple
+
+
 class GetDocumentByIdSerializer(BaseCustomerSerializer):
     document_id = serializers.IntegerField()
 
@@ -56,8 +75,26 @@ class GetDocumentByIdSerializer(BaseCustomerSerializer):
         except OrderDocument.DoesNotExist:
             raise serializers.ValidationError(
                 "OrderDocument with this ID does not exist.")
-
         return a
+
+
+class DriverGetDocumentByIdSerializer(serializers.Serializer):
+    document_id = serializers.IntegerField()
+
+    def __init__(self, driver: DriverProfile, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.driver = driver
+
+    def validate_document_id(self, value):
+        try:
+            doc: OrderDocument = OrderDocument.objects.get(id=value)
+            if doc.user != self.driver.user:
+                raise serializers.ValidationError(
+                    "document does not belong to you")
+        except OrderDocument.DoesNotExist:
+            raise serializers.ValidationError(
+                "document does not exist")
+        return doc
 
 
 class TransporterGetOrderByIdSerializer(serializers.Serializer):
@@ -92,6 +129,29 @@ class TransporterGetOrderByIdSerializer(serializers.Serializer):
                 "OrderModel with this ID does not exist")
 
         return a
+
+
+class DriverGetOrderByIdSerializer(serializers.Serializer):
+    """
+    Сериализатор для получения заказа по ID для водителя (DriverProfile)
+    Если водитель не имеет доступа к заказу, то будет возвращена ошибка
+    """
+    order_id = serializers.IntegerField()
+
+    def __init__(self, driver: DriverProfile, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.driver = driver
+
+    def validate_order_id(self, value):
+        try:
+            order: OrderModel = OrderModel.objects.get(id=value)
+            if order.driver != self.driver:
+                raise serializers.ValidationError(
+                    "order_does_not_belong_to_you")
+        except OrderModel.DoesNotExist:
+            raise serializers.ValidationError(
+                "order_does_not_exist")
+        return order
 
 
 class GetOrderOfferByIdSerializer(serializers.Serializer):

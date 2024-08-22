@@ -30,6 +30,10 @@ transporter = [
 
 driver = [
     path('get_order/', views_driver.GetOrder.as_view()),
+    path('add_document/', AddDocumentView.as_view()),
+    path('delete_document/', DeleteDocumentView.as_view()),
+    path('make_order_stage_completed/',
+         views_driver.MakeOrderStageCompleted.as_view()),
 ]
 
 urlpatterns = [

@@ -73,6 +73,7 @@ class OrderStages(models.Model):
 
     comments = models.TextField(null=True, blank=True,
                                 max_length=20_000, verbose_name='Комментарии к поставке')
+    completed = models.BooleanField(default=False, verbose_name="Завершено")
 
     class Meta:
         verbose_name = 'Этап заказа'

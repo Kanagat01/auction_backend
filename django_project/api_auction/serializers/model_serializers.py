@@ -237,7 +237,7 @@ class OrderSerilizerForDriver(serializers.ModelSerializer):
 
     class Meta:
         model = OrderModel
-        fields = ['transportation_number', 'stages', 'documents']
+        fields = ['id', 'transportation_number', 'stages', 'documents']
 
     def get_documents(self, obj: OrderModel):
         documents = obj.documents.filter(user=self.driver.user)

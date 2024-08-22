@@ -16,16 +16,21 @@ class AddDocumentView(APIView):
                 data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             order = serializer.validated_data['order_id']
-        elif request.user.user_type == UserTypes.CUSTOMER_MANAGER:
+
+        elif request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
             serializer = TransporterGetOrderByIdSerializer(
                 data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             order: OrderModel = serializer.validated_data['order_id']
             if order.transporter_manager.company != request.user.transporter_manager.company:
                 return error_with_text('OrderModel with this ID does not belong to your company.')
+
         else:
-            # TODO: add document for driver
-            pass
+            serializer = DriverGetOrderByIdSerializer(
+                data=request.data, driver=request.user.driver_profile)
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+            order: OrderModel = serializer.validated_data['order_id']
 
         request.data['order'] = order.pk
         document_serializer = OrderDocumentSerializer(data=request.data)
@@ -33,7 +38,13 @@ class AddDocumentView(APIView):
             return error_with_text(document_serializer.errors)
 
         document_serializer.save(user=request.user, order=order)
-        return success_with_text(OrderSerializer(order).data)
+
+        if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
+            return success_with_text(OrderSerializer(order).data)
+        elif request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
+            return success_with_text(OrderSerializerForTransporter(order, transporter_manager=request.user.transporter_manager).data)
+        else:
+            return success_with_text(OrderSerilizerForDriver(order, driver=request.user.driver_profile).data)
 
 
 class DeleteDocumentView(APIView):
@@ -44,8 +55,9 @@ class DeleteDocumentView(APIView):
             serializer = GetDocumentByIdSerializer(
                 data=request.data, context={'request': request})
         else:
-            # TODO:delete document for driver
-            pass
+            serializer = DriverGetDocumentByIdSerializer(
+                data=request.data, driver=request.user.driver_profile)
+
         serializer.is_valid(raise_exception=True)
         document = serializer.validated_data['document_id']
         document.delete()
