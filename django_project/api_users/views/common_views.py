@@ -4,7 +4,14 @@ from rest_framework.request import Request
 from rest_framework.authtoken.models import Token
 from api_users.models import *
 from api_users.serializers import *
-from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount
+from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount, IsAuthenticatedWithBlocked
+
+
+class ValidateToken(APIView):
+    permission_classes = [IsAuthenticatedWithBlocked]
+
+    def get(self, request):
+        return success_with_text("ok")
 
 
 class GetUser(APIView):
