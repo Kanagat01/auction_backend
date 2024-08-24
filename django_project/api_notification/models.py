@@ -38,10 +38,10 @@ class Notification(models.Model):
         ordering = ["created_at"]
 
     def save(self, *args, **kwargs):
-        super(Notification, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"user_{self.user.pk}", {
+            f"user_notifications_{self.user.pk}", {
                 "type": "send_notification",
                 "notification_id": self.pk
             }

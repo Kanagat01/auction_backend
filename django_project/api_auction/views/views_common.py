@@ -41,7 +41,7 @@ class GetOrdersView(APIView):
         user = request.user
         user_type = user.user_type
 
-        status_lst = self.get_status_list(user_type)
+        status_lst = OrderStatus.get_status_list(user_type)
         status = request.query_params.get('status')
         if status not in status_lst:
             return error_with_text("invalid_order_status")
@@ -61,13 +61,6 @@ class GetOrdersView(APIView):
             'orders': result,
             "pre_create_order": self.get_pre_create_order_data()
         })
-
-    def get_status_list(self, user_type):
-        status_lst = [OrderStatus.cancelled, OrderStatus.in_auction, OrderStatus.in_bidding,
-                      OrderStatus.in_direct, OrderStatus.being_executed]
-        if user_type in [UserTypes.CUSTOMER_COMPANY, UserTypes.CUSTOMER_MANAGER]:
-            status_lst.append(OrderStatus.unpublished)
-        return status_lst
 
     def get_status_filter(self, status):
         if status == OrderStatus.being_executed:

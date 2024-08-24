@@ -3,8 +3,10 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
-from api_users.models import CustomerManager, TransporterManager, CustomerCompany, DriverProfile
+from api_users.models import CustomerManager, TransporterManager, CustomerCompany, DriverProfile, UserTypes
 from api_auction.models import order_transport
 from api_notification.models import Notification, NotificationType
 
@@ -37,6 +39,14 @@ class OrderStatus:
     @classmethod
     def publish_to_choices(cls):
         return cls.in_auction, cls.in_bidding, cls.in_direct
+
+    @classmethod
+    def get_status_list(cls, user_type: UserTypes):
+        status_lst = [cls.cancelled, cls.in_auction, cls.in_bidding,
+                      cls.in_direct, cls.being_executed]
+        if user_type in [UserTypes.CUSTOMER_COMPANY, UserTypes.CUSTOMER_MANAGER]:
+            status_lst.append(cls.unpublished)
+        return status_lst
 
 
 class _OrderMake:
@@ -205,6 +215,7 @@ class OrderModel(models.Model):
     # tracking
     # documents
     # offers
+    # application_type
 
     class Meta:
         verbose_name = 'Заказ'
@@ -221,8 +232,61 @@ class OrderModel(models.Model):
             })
 
     def save(self, *args, **kwargs):
+        old_instance = OrderModel.objects.get(
+            pk=self.pk) if self.pk else None
+
         self.clean()
         super().save(*args, **kwargs)
+
+        channel_layer = get_channel_layer()
+
+        def remove_order(user_id: int, order_status: str):
+            async_to_sync(channel_layer.group_send)(f"user_orders_{user_id}", {
+                "type": "remove_order",
+                "order_id": self.pk,
+                "order_status": order_status
+            })
+
+        user_ids = self.get_user_ids()
+        if old_instance and old_instance.status != self.status:
+            # если статус заказа изменился, его нужно удалить из соответствуюшего раздела на сайте
+            # у всех пользователей у которых есть доступ к этому заказу
+            if (self.status != OrderStatus.completed or old_instance.status != OrderStatus.being_executed) and \
+                    (self.status != OrderStatus.being_executed or old_instance.status != OrderStatus.completed):
+                # Если статус меняется между завершенным и выполняющимся, то удалять не нужно ведь эти заказы находятся на одной странице
+                for user_id in user_ids:
+                    remove_order(user_id=user_id,
+                                 order_status=old_instance.status)
+
+        elif old_instance and old_instance.transporter_manager and old_instance.transporter_manager != self.transporter_manager:
+            tr_manager = old_instance.transporter_manager
+            if not self.transporter_manager or tr_manager.company == self.transporter_manager.company:
+                # если компания перевозчика изменилась, заказ нужно удалить у менеджеров этой компании и у аккаунта этой компании
+                remove_order(
+                    user_id=tr_manager.company.user.pk, order_status=self.status)
+                for manager in tr_manager.company.managers.all():
+                    remove_order(user_id=manager.user.pk,
+                                 order_status=self.status)
+
+        is_new_data = False if old_instance else True
+        if old_instance:
+            # проверяем изменилось ли какое нибудь поле
+            new_values = {field.name: getattr(
+                self, field.name) for field in self._meta.fields}
+            old_values = {field.name: getattr(
+                old_instance, field.name) for field in old_instance._meta.fields if field.name != "updated_at"}
+            for field_name, old_value in old_values.items():
+                new_value = new_values.get(field_name)
+                if old_value != new_value:
+                    is_new_data = True
+                    break
+
+        if is_new_data:
+            for user_id in user_ids:
+                async_to_sync(channel_layer.group_send)(f"user_orders_{user_id}", {
+                    "type": "add_or_update_order",
+                    "order_id": self.pk,
+                })
 
     @property
     def make(self):
@@ -230,6 +294,16 @@ class OrderModel(models.Model):
 
     def is_transporter_manager_allowed(self, transporter_manager: TransporterManager):
         return self.customer_manager.company.is_transporter_company_allowed(transporter_manager.company)
+
+    def get_user_ids(self):
+        user_ids = [self.customer_manager.company.user.pk]
+        for m in self.customer_manager.company.managers.all():
+            user_ids.append(m.user.pk)
+        if self.transporter_manager:
+            user_ids.append(self.transporter_manager.company.user.pk)
+            user_ids.extend(
+                [m.user.pk for m in self.transporter_manager.company.managers.all()])
+        return user_ids
 
     @staticmethod
     def check_transportation_number(number: int, company: CustomerCompany, pk: int = None):

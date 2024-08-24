@@ -1,10 +1,12 @@
-from backend.global_functions import success_with_text, error_with_text
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
 from api_users.models import *
 from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
+from backend.global_functions import success_with_text, error_with_text
 
 
 class AddDriverData(APIView):
@@ -35,4 +37,13 @@ class AddDriverData(APIView):
         driver = driver_serializer.save()
         order.driver = driver
         order.save()
+
+        user_ids = order.get_user_ids()
+        user_ids.remove(request.user.pk)
+        for user_id in user_ids:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(f"user_orders_{user_id}", {
+                "type": "add_or_update_order",
+                "order_id": order.pk,
+            })
         return success_with_text(DriverProfileSerializer(driver).data)
