@@ -21,6 +21,7 @@ class OrderConsumer(BaseAuthorisedConsumer):
             new_status = data.get("status")
             if new_status in OrderStatus.get_status_list(self.user.user_type):
                 self.status: OrderStatus = new_status
+                await self.send_json({"status": new_status})
             else:
                 await self.send_json({"error": "incorrect_status"})
 
