@@ -21,19 +21,35 @@ class GetUser(APIView):
 
     def get(self, request: Request):
         instance = request.user
+        settings = Settings.objects.first()
+        settings_data = SettingsSerializer(settings).data if settings else {}
+
+        profile = {}
         if instance.user_type == UserTypes.CUSTOMER_COMPANY:
-            return success_with_text(CustomerCompanySerializer(instance.customer_company).data)
+            profile = CustomerCompanySerializer(
+                instance.customer_company).data
         elif instance.user_type == UserTypes.CUSTOMER_MANAGER:
-            return success_with_text(CustomerManagerSerializer(instance.customer_manager).data)
+            profile = CustomerManagerSerializer(
+                instance.customer_manager).data
         elif instance.user_type == UserTypes.TRANSPORTER_COMPANY:
-            return success_with_text(TransporterCompanySerializer(instance.transporter_company).data)
+            profile = TransporterCompanySerializer(
+                instance.transporter_company).data
         elif instance.user_type == UserTypes.TRANSPORTER_MANAGER:
-            return success_with_text(TransporterManagerSerializer(instance.transporter_manager).data)
+            profile = TransporterManagerSerializer(
+                instance.transporter_manager).data
         elif instance.user_type == UserTypes.DRIVER:
-            return success_with_text(DriverProfileSerializer(instance.driver_profile).data)
+            profile = DriverProfileSerializer(
+                instance.driver_profile).data
         elif instance.user_type == UserTypes.ORDER_VIEWER:
-            return success_with_text(OrderViewerSerializer(instance.order_viewer).data)
-        return error_with_text('user_not_found')
+            profile = OrderViewerSerializer(instance.order_viewer).data
+        else:
+            return error_with_text('user_not_found')
+
+        response_data = {
+            "profile": profile,
+            "settings": settings_data
+        }
+        return success_with_text(response_data)
 
 
 class EditUser(APIView):

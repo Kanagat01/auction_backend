@@ -2,6 +2,12 @@ from api_users.models import *
 from rest_framework import serializers
 
 
+class SettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Settings
+        fields = '__all__'
+
+
 class UserModelSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='id', read_only=True)
 
