@@ -40,8 +40,6 @@ class GetUser(APIView):
         elif instance.user_type == UserTypes.DRIVER:
             profile = DriverProfileSerializer(
                 instance.driver_profile).data
-        elif instance.user_type == UserTypes.ORDER_VIEWER:
-            profile = OrderViewerSerializer(instance.order_viewer).data
         else:
             return error_with_text('user_not_found')
 

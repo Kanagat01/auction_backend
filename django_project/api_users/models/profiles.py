@@ -3,8 +3,6 @@ import random
 import datetime
 from django.db import models
 from django.core.validators import RegexValidator
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 
 from api_users.models.subscriptions import *
 from api_users.models.user import UserModel
@@ -60,11 +58,14 @@ class CustomerCompany(models.Model):
         UserModel, on_delete=models.CASCADE, related_name='customer_company')
     company_name = models.CharField(
         max_length=200, verbose_name='Название компании')
-    subscription = models.CharField(max_length=300, choices=CustomerSubscriptions.choices(),
-                                    default=CustomerSubscriptions.FREE, verbose_name='Подписка')
-    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
-                                                           related_name='allowed_customer_companies')
+    balance = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, verbose_name='Баланс компании'
+    )
+    subscription = models.ForeignKey(
+        CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
     details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
+    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
+                                                           related_name='allowed_customer_companies', verbose_name='Перевозчики компании')
 
     class Meta:
         verbose_name = 'Компания заказчика'
@@ -96,8 +97,11 @@ class TransporterCompany(models.Model):
         UserModel, on_delete=models.CASCADE, related_name='transporter_company')
     company_name = models.CharField(
         max_length=200, verbose_name='Название компании')
-    subscription = models.CharField(max_length=300, choices=TransporterSubscriptions.choices(),
-                                    default=TransporterSubscriptions.FREE, verbose_name='Подписка')
+    balance = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, verbose_name='Баланс компании'
+    )
+    subscription = models.ForeignKey(
+        TransporterSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
     details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
 
     class Meta:
@@ -123,18 +127,3 @@ class TransporterManager(models.Model):
 
     def __str__(self):
         return f'{self.pk} Менеджер перевозчика - [{self.user}]'
-
-
-class OrderViewer(models.Model):
-    user = models.OneToOneField(
-        UserModel, on_delete=models.CASCADE, related_name='order_viewer')
-    # TODO: Change the name if needed
-    order = models.ForeignKey('api_auction.OrderModel',
-                              on_delete=models.CASCADE, related_name='viewers')
-
-    class Meta:
-        verbose_name = 'Просмотр заказа'
-        verbose_name_plural = 'Просмотры заказов'
-
-    def __str__(self):
-        return f'{self.pk} Просмотр заказа - [{self.user}]'

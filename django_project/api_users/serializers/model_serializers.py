@@ -109,12 +109,3 @@ class DriverProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverProfile
         exclude = ['id']
-
-
-class OrderViewerSerializer(serializers.ModelSerializer):
-    user = UserModelSerializer()
-    order_viewer_id = serializers.IntegerField(source='id', read_only=True)
-
-    class Meta:
-        model = OrderViewer
-        exclude = ['id']

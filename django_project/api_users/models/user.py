@@ -7,7 +7,6 @@ class UserTypes:
     CUSTOMER_MANAGER = 'customer_manager'
     TRANSPORTER_COMPANY = 'transporter_company'
     TRANSPORTER_MANAGER = 'transporter_manager'
-    ORDER_VIEWER = 'order_viewer'
     DRIVER = 'driver'
     SUPER_ADMIN = 'super_admin'
 
@@ -18,7 +17,6 @@ class UserTypes:
             (cls.CUSTOMER_MANAGER, 'Заказчик (менеджер)'),
             (cls.TRANSPORTER_COMPANY, 'Перевозчик (компания)'),
             (cls.TRANSPORTER_MANAGER, 'Перевозчик (менеджер)'),
-            (cls.ORDER_VIEWER, 'Просмотрщик заказов'),
             (cls.DRIVER, 'Водитель'),
             (cls.SUPER_ADMIN, 'Супер админ'),
         )

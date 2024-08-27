@@ -1,5 +1,4 @@
-from api_users.models import UserModel, UserTypes
-from api_users.models.subscriptions import CustomerSubscriptions
+from api_users.models import UserTypes
 from api_users.permissions.common_permissions import IsAuthenticatedWithBlocked
 
 

@@ -28,3 +28,21 @@ admin.site.register(CustomerManager)
 admin.site.register(TransporterCompany)
 admin.site.register(TransporterManager)
 admin.site.register(DriverProfile)
+
+
+class SubscriptionAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CustomerSubscription)
+class CustomerSubscriptionAdmin(SubscriptionAdmin, admin.ModelAdmin):
+    pass
+
+
+@admin.register(TransporterSubscription)
+class TransporterSubscriptionAdmin(SubscriptionAdmin, admin.ModelAdmin):
+    pass
