@@ -24,7 +24,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 REACT_RESET_PASSWORD_URL = os.environ.get(
     "REACT_RESET_PASSWORD_URL", "http://localhost:5173/reset-password-confirm/")
 
-if "kargonika.ru" not in ALLOWED_HOSTS:
+if "cargonika.ru" not in ALLOWED_HOSTS:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     EMAIL_HOST_USER = "example@gmail.com"
 else:
