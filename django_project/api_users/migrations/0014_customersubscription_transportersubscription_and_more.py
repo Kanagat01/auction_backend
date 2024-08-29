@@ -4,6 +4,59 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def set_null_to_company_subscriptions(apps, schema_editor):
+    CustomerCompany = apps.get_model('api_users', 'CustomerCompany')
+    TransporterCompany = apps.get_model('api_users', 'TransporterCompany')
+
+    CustomerCompany.objects.update(subscription=None)
+    TransporterCompany.objects.update(subscription=None)
+
+
+def create_initial_subscriptions(apps, schema_editor):
+    CustomerSubscription = apps.get_model('api_users', 'CustomerSubscription')
+    TransporterSubscription = apps.get_model(
+        'api_users', 'TransporterSubscription')
+
+    if not CustomerSubscription.objects.exists():
+        CustomerSubscription.objects.create(
+            codename='all_functionality',
+            name='Весь функционал',
+            price=0,
+            days_without_payment=0
+        )
+        CustomerSubscription.objects.create(
+            codename='all_functionality_and_find_cargo',
+            name='Весь функционал + Грузополучатель',
+            price=0,
+            days_without_payment=0
+        )
+
+    if not TransporterSubscription.objects.exists():
+        TransporterSubscription.objects.create(
+            codename='all_functionality_and_application',
+            name='Весь функционал + Приложение',
+            price=0,
+            win_percentage_fee=0,
+            days_without_payment=0
+        )
+
+
+def remove_initial_subscriptions(apps, schema_editor):
+    CustomerCompany = apps.get_model('api_users', 'CustomerCompany')
+    TransporterCompany = apps.get_model('api_users', 'TransporterCompany')
+    CustomerSubscription = apps.get_model('api_users', 'CustomerSubscription')
+    TransporterSubscription = apps.get_model(
+        'api_users', 'TransporterSubscription')
+
+    CustomerCompany.objects.filter(
+        subscription__isnull=False).update(subscription=None)
+    TransporterCompany.objects.filter(
+        subscription__isnull=False).update(subscription=None)
+
+    CustomerSubscription.objects.all().delete()
+    TransporterSubscription.objects.all().delete()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -16,6 +69,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True,
                  primary_key=True, serialize=False, verbose_name='ID')),
+                ('codename', models.CharField(max_length=50,
+                 unique=True, verbose_name='Кодовое имя')),
                 ('name', models.CharField(
                     max_length=100, verbose_name='Название тарифа')),
                 ('price', models.DecimalField(decimal_places=2,
@@ -33,6 +88,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True,
                  primary_key=True, serialize=False, verbose_name='ID')),
+                ('codename', models.CharField(max_length=50,
+                 unique=True, verbose_name='Кодовое имя')),
                 ('name', models.CharField(
                     max_length=100, verbose_name='Название тарифа')),
                 ('price', models.DecimalField(decimal_places=2,
@@ -47,6 +104,8 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Тарифы Перевозчик',
             },
         ),
+        migrations.RunPython(create_initial_subscriptions,
+                             reverse_code=remove_initial_subscriptions),
         migrations.AddField(
             model_name='customercompany',
             name='balance',
@@ -71,14 +130,20 @@ class Migration(migrations.Migration):
             field=models.CharField(choices=[('customer_company', 'Заказчик (компания)'), ('customer_manager', 'Заказчик (менеджер)'), ('transporter_company', 'Перевозчик (компания)'), (
                 'transporter_manager', 'Перевозчик (менеджер)'), ('driver', 'Водитель'), ('super_admin', 'Супер админ')], max_length=20, verbose_name='Тип'),
         ),
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name='customercompany',
             name='subscription',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='api_users.customersubscription', verbose_name='Тариф'),
         ),
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name='transportercompany',
             name='subscription',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='api_users.transportersubscription', verbose_name='Тариф'),
         ),
+        migrations.RunPython(set_null_to_company_subscriptions,
+                             reverse_code=set_null_to_company_subscriptions),
         migrations.DeleteModel(
             name='OrderViewer',
         ),

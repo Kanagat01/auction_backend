@@ -2,6 +2,9 @@ from django.db import models
 
 
 class CustomerSubscription(models.Model):
+    codename = models.CharField(
+        max_length=50, unique=True, verbose_name="Кодовое имя")
+
     name = models.CharField(max_length=100, verbose_name="Название тарифа")
     price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Стоимость")
@@ -17,6 +20,9 @@ class CustomerSubscription(models.Model):
 
 
 class TransporterSubscription(models.Model):
+    codename = models.CharField(
+        max_length=50, unique=True, verbose_name="Кодовое имя")
+
     name = models.CharField(max_length=100, verbose_name="Название тарифа")
     price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Стоимость")

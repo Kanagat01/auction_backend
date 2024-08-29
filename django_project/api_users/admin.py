@@ -31,6 +31,8 @@ admin.site.register(DriverProfile)
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
+    exclude = ('codename',)
+
     def has_add_permission(self, request):
         return False
 
