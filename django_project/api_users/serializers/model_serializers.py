@@ -2,6 +2,18 @@ from api_users.models import *
 from rest_framework import serializers
 
 
+class CustomerSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerSubscription
+        fields = '__all__'
+
+
+class TransporterSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransporterSubscription
+        fields = '__all__'
+
+
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Settings
@@ -20,7 +32,9 @@ class CustomerCompanySerializer(serializers.ModelSerializer):
     customer_company_id = serializers.IntegerField(source='id', read_only=True)
     managers = serializers.SerializerMethodField()
     user = UserModelSerializer()
+    subscription = CustomerSubscriptionSerializer()
     allowed_transporter_companies = serializers.SerializerMethodField()
+    subscriptions_list = serializers.SerializerMethodField()
 
     def __init__(self, *args, from_manager=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,6 +56,9 @@ class CustomerCompanySerializer(serializers.ModelSerializer):
     def get_allowed_transporter_companies(self, instance):
         return TransporterCompanySerializer(instance.allowed_transporter_companies.all(), many=True,
                                             from_manager=True).data
+
+    def get_subscriptions_list(self, instance):
+        return CustomerSubscriptionSerializer(CustomerSubscription.objects.all(), many=True).data
 
 
 class CustomerManagerSerializer(serializers.ModelSerializer):
@@ -69,6 +86,8 @@ class TransporterCompanySerializer(serializers.ModelSerializer):
     managers = serializers.SerializerMethodField()
     transporter_company_id = serializers.IntegerField(
         source='id', read_only=True)
+    subscription = TransporterSubscriptionSerializer()
+    subscriptions_list = serializers.SerializerMethodField()
 
     def __init__(self, *args, from_manager=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,6 +103,9 @@ class TransporterCompanySerializer(serializers.ModelSerializer):
         if self.context.get('from_manager'):
             return None
         return TransporterManagerSerializer(instance.managers.all(), many=True, from_company=True).data
+
+    def get_subscriptions_list(self, instance):
+        return TransporterSubscriptionSerializer(TransporterSubscription.objects.all(), many=True).data
 
 
 class TransporterManagerSerializer(serializers.ModelSerializer):

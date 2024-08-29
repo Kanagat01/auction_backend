@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class CustomerSubscription(models.Model):
+class Subscription(models.Model):
     codename = models.CharField(
         max_length=50, unique=True, verbose_name="Кодовое имя")
 
@@ -12,6 +12,11 @@ class CustomerSubscription(models.Model):
         verbose_name="Количество дней без оплаты")
 
     class Meta:
+        abstract = True
+
+
+class CustomerSubscription(Subscription):
+    class Meta:
         verbose_name = "Тариф"
         verbose_name_plural = "Тарифы Заказчик"
 
@@ -19,17 +24,9 @@ class CustomerSubscription(models.Model):
         return self.name
 
 
-class TransporterSubscription(models.Model):
-    codename = models.CharField(
-        max_length=50, unique=True, verbose_name="Кодовое имя")
-
-    name = models.CharField(max_length=100, verbose_name="Название тарифа")
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Стоимость")
+class TransporterSubscription(Subscription):
     win_percentage_fee = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="% от суммы выигранной перевозки")
-    days_without_payment = models.IntegerField(
-        verbose_name="Количество дней без оплаты")
 
     class Meta:
         verbose_name = "Тариф"

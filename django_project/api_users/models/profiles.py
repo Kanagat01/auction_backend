@@ -53,23 +53,36 @@ class PhoneNumberChangeRequest(models.Model):
         self.save()
 
 
-class CustomerCompany(models.Model):
-    user = models.OneToOneField(
-        UserModel, on_delete=models.CASCADE, related_name='customer_company')
+class BaseCompany(models.Model):
     company_name = models.CharField(
         max_length=200, verbose_name='Название компании')
     balance = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, verbose_name='Баланс компании'
     )
+    details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class CustomerCompany(BaseCompany):
+    user = models.OneToOneField(
+        UserModel, on_delete=models.CASCADE, related_name='customer_company')
     subscription = models.ForeignKey(
         CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
-    details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
     allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
                                                            related_name='allowed_customer_companies', verbose_name='Перевозчики компании')
 
     class Meta:
         verbose_name = 'Компания заказчика'
         verbose_name_plural = 'Компании заказчиков'
+
+    def save(self, *args, **kwargs):
+        if self.subscription and not self.user.is_active and self.balance >= self.subscription.price:
+            self.balance -= self.subscription.price
+            self.user.is_active = True
+            self.user.save()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} Компания заказчика - [{self.company_name}]'
@@ -92,21 +105,22 @@ class CustomerManager(models.Model):
         return f'{self.pk} Менеджер заказчика - [{self.user}]'
 
 
-class TransporterCompany(models.Model):
+class TransporterCompany(BaseCompany):
     user = models.OneToOneField(
         UserModel, on_delete=models.CASCADE, related_name='transporter_company')
-    company_name = models.CharField(
-        max_length=200, verbose_name='Название компании')
-    balance = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name='Баланс компании'
-    )
     subscription = models.ForeignKey(
         TransporterSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
-    details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
 
     class Meta:
         verbose_name = 'Компания перевозчика'
         verbose_name_plural = 'Компании перевозчиков'
+
+    def save(self, *args, **kwargs):
+        if self.subscription and not self.user.is_active and self.balance >= self.subscription.price:
+            self.balance -= self.subscription.price
+            self.user.is_active = True
+            self.user.save()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} Компания перевозчика - [{self.company_name}]'

@@ -34,11 +34,6 @@ else:
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT"))
     EMAIL_USE_SSL = bool(os.environ.get("EMAIL_USE_SSL"))
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
-CELERY_RESULT_EXTENDED = True
 
 INSTALLED_APPS = [
     "daphne",
@@ -56,7 +51,6 @@ INSTALLED_APPS = [
     'api_payments',
     'api_notification',
     'api_auction',
-    'django_celery_results',
 ]
 
 MIDDLEWARE = [

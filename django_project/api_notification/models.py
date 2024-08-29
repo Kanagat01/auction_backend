@@ -11,6 +11,7 @@ class NotificationType:
     NEW_ORDER_IN_DIRECT = 'new_order_in_direct'
     NEW_ORDER_BEING_EXECUTED = 'new_order_being_executed'
     ORDER_CANCELLED = 'order_cancelled'
+    POPUP_NOTIFICATION = 'popup_notification'
 
     CHOICES = [
         (INFO, 'Информационная'),
@@ -19,6 +20,7 @@ class NotificationType:
         (NEW_ORDER_IN_DIRECT, 'Новый заказ назначен напрямую'),
         (NEW_ORDER_BEING_EXECUTED, 'Новый заказ принят в исполнение'),
         (ORDER_CANCELLED, 'Заказ отменен'),
+        (POPUP_NOTIFICATION, 'Всплывающее уведомление'),
     ]
 
 
@@ -26,7 +28,7 @@ class Notification(models.Model):
     user = models.ForeignKey(
         UserModel, on_delete=models.CASCADE, related_name="notifications")
     title = models.CharField(max_length=200, verbose_name="Название")
-    description = models.CharField(max_length=300, verbose_name="Описание")
+    description = models.TextField(max_length=500, verbose_name="Описание")
     type = models.CharField(
         max_length=24, choices=NotificationType.CHOICES, verbose_name="Тип")
     created_at = models.DateTimeField(
@@ -39,6 +41,7 @@ class Notification(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"user_notifications_{self.user.pk}", {
