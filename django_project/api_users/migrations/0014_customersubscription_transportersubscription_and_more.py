@@ -48,10 +48,8 @@ def remove_initial_subscriptions(apps, schema_editor):
     TransporterSubscription = apps.get_model(
         'api_users', 'TransporterSubscription')
 
-    CustomerCompany.objects.filter(
-        subscription__isnull=False).update(subscription=None)
-    TransporterCompany.objects.filter(
-        subscription__isnull=False).update(subscription=None)
+    CustomerCompany.objects.all().update(subscription='customer_unpaid')
+    TransporterCompany.objects.all().update(subscription='transporter_unpaid')
 
     CustomerSubscription.objects.all().delete()
     TransporterSubscription.objects.all().delete()
