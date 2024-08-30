@@ -1,14 +1,15 @@
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from api_users.models import *
 from api_users.serializers import *
-from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount, IsAuthenticatedWithBlocked
+from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount
 
 
 class ValidateToken(APIView):
-    permission_classes = [IsAuthenticatedWithBlocked]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return success_with_text("ok")

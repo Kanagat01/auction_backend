@@ -3,7 +3,8 @@ from django.db import models
 from django.utils import timezone
 
 from api_users.models import TransporterManager, UserModel
-from .order import OrderModel
+from api_notification.models import Notification, NotificationType
+from .order import OrderModel, OrderStatus
 
 
 class OrderTracking(models.Model):
@@ -40,7 +41,7 @@ class OrderTrackingGeoPoint(models.Model):
 
 
 class OrderDocument(models.Model):
-    order = models.ForeignKey('OrderModel', on_delete=models.CASCADE,
+    order = models.ForeignKey(OrderModel, on_delete=models.CASCADE,
                               verbose_name='Заказ', related_name='documents')
 
     file = models.FileField(upload_to='documents/', verbose_name='Файл')
@@ -96,15 +97,52 @@ class OrderOffer(models.Model):
         self.status = OrderOfferStatus.rejected
         self.save()
 
+        if self.order.status == OrderStatus.in_direct:
+            Notification.objects.create(
+                user=self.order.customer_manager.user,
+                title=f"Заказ отклонена",
+                description=(
+                    f"Транспортировка №{self.order.transportation_number} отклонена "
+                    f"Перевозчиком {self.transporter_manager.company.company_name}"
+                ),
+                type=NotificationType.INFO
+            )
+
     def make_accepted(self):
         if self.status != OrderOfferStatus.none:
             raise ValidationError('You can not accept rejected offer')
+
+        if self.order.status == OrderStatus.in_direct:
+            Notification.objects.create(
+                user=self.order.customer_manager.user,
+                title=f"Заказ перешла в работу",
+                description=(
+                    f"Транспортировка №{self.order.transportation_number} принята "
+                    f"Перевозчиком {self.transporter_manager.company.company_name}"
+                ),
+                type=NotificationType.INFO
+            )
+        else:
+            Notification.objects.create(
+                user=self.transporter_manager.user,
+                title=f"Ваше предложение принято",
+                description=(
+                    f'Ваше предложение на транспортировку №{self.order.transportation_number} было принято. '
+                    'Статус заказа изменен на "Выполняется"'
+                ),
+                type=NotificationType.NEW_ORDER_BEING_EXECUTED
+            )
         self.order.make.offer_accepted(self)
+
+        if self.order.status != OrderStatus.in_direct:
+            company = self.order.transporter_manager.company
+            company.balance -= self.price * company.subscription.win_percentage_fee / 100
+            company.save()
         self.status = OrderOfferStatus.accepted
         self.save()
 
     @staticmethod
-    def get_lowest_price_for(order: OrderModel) -> int:
+    def get_lowest_price_for(order) -> int:
         offers = order.offers.filter(status=OrderOfferStatus.none)
         if offers.exists():
             return offers.order_by('price').first().price

@@ -5,12 +5,12 @@ from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
 from api_users.models import *
-from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
+from api_users.permissions import IsActiveUser, IsTransporterManagerAccount
 from backend.global_functions import success_with_text, error_with_text
 
 
 class AddDriverData(APIView):
-    permission_classes = [IsTransporterManagerAccount]
+    permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def post(self, request: Request):
         order_id = request.data.pop("order_id")

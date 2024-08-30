@@ -25,7 +25,8 @@ class UserTypes:
 class UserModel(AbstractUser):
     email = models.EmailField(
         unique=True, blank=True, null=True,  verbose_name='Электронная почта', max_length=300)
-    blocked = models.BooleanField(default=False, verbose_name='Заблокирован')
+    has_unpaid_subscription = models.BooleanField(
+        default=False, verbose_name="Тариф не оплачен")
     user_type = models.CharField(
         max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
     full_name = models.CharField(max_length=200, )

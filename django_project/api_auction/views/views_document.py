@@ -1,5 +1,5 @@
 from api_users.models import UserTypes
-from api_users.permissions import IsTransporterManagerAccount, IsCustomerManagerAccount, IsDriverAccount
+from api_users.permissions import IsActiveUser, IsAnyOfPermissions, IsTransporterManagerAccount, IsCustomerManagerAccount, IsDriverAccount
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -7,8 +7,8 @@ from api_auction.serializers import *
 
 
 class AddDocumentView(APIView):
-    permission_classes = [IsCustomerManagerAccount |
-                          IsTransporterManagerAccount | IsDriverAccount]
+    permission_classes = [IsActiveUser, IsAnyOfPermissions(
+        IsCustomerManagerAccount, IsTransporterManagerAccount, IsDriverAccount)]
 
     def post(self, request: Request):
         if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
@@ -48,7 +48,8 @@ class AddDocumentView(APIView):
 
 
 class DeleteDocumentView(APIView):
-    permission_classes = [IsCustomerManagerAccount | IsDriverAccount]
+    permission_classes = [IsActiveUser, IsAnyOfPermissions(
+                          IsCustomerManagerAccount | IsDriverAccount)]
 
     def post(self, request: Request):
         if request.user.user_type == UserTypes.CUSTOMER_MANAGER:

@@ -6,12 +6,12 @@ from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
 from api_notification.models import Notification, NotificationType
-from api_users.permissions.customer_permissions import IsCustomerManagerAccount
+from api_users.permissions import IsActiveUser, IsCustomerManagerAccount
 from backend.global_functions import success_with_text, error_with_text
 
 
 class PreCreateOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def get(self, request: Request):
         # get names of all transport body types, load types, unload types
@@ -47,7 +47,7 @@ class PreCreateOrderView(APIView):
 
 
 class CreateOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         stages_data = request.data.pop('stages', [])
@@ -168,7 +168,7 @@ def update_stages(request: Request, order: OrderModel, stages_data: list):
 
 
 class EditOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
 
@@ -204,7 +204,7 @@ class EditOrderView(APIView):
 
 
 class CancelOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -231,7 +231,7 @@ class CancelOrderView(APIView):
 
 
 class UnpublishOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -246,7 +246,7 @@ class UnpublishOrderView(APIView):
 
 
 class PublishOrderToView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = PublishOrderToSerializer(
@@ -267,39 +267,12 @@ class PublishOrderToView(APIView):
             price = direct_serializer.validated_data['price']
             OrderOffer.objects.create(
                 order=order, transporter_manager=transporter_manager, price=price)
-            Notification.objects.create(
-                user=transporter_manager.user,
-                title=f"Вам назначен заказ",
-                description=(
-                    f"Вам назначена транспортировка №{order.transportation_number} "
-                    f"заказчиком {order.customer_manager.company.company_name}. "
-                    "Вы можете принять или отклонить предложение"
-                ),
-                type=NotificationType.NEW_ORDER_IN_DIRECT
-            )
         order.make.published_to(publish_to)
-        if publish_to != OrderStatus.in_direct:
-            companies = order.customer_manager.company.allowed_transporter_companies.all()
-            for company in companies:
-                for manager in company.managers.all():
-                    Notification.objects.create(
-                        user=manager.user,
-                        title=f"Новый заказ в {'в аукционе' if publish_to == OrderStatus.in_auction else 'в торгах'}",
-                        description=(
-                            f"Транспортировка №{order.transportation_number} добавлена "
-                            f"{'в аукцион' if publish_to == OrderStatus.in_auction else 'в торги'}"
-                        ),
-                        type=(
-                            NotificationType.NEW_ORDER_IN_AUCTION
-                            if publish_to == OrderStatus.in_auction
-                            else NotificationType.NEW_ORDER_IN_BIDDING
-                        )
-                    )
         return success_with_text(OrderSerializer(order).data)
 
 
 class CompleteOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -314,7 +287,7 @@ class CompleteOrderView(APIView):
 
 
 class CancelOrderCompletionView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(

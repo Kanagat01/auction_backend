@@ -76,8 +76,6 @@ class Login(APIView):
         user: UserModel = authenticate(username=username, password=password)
         if user is None:
             return error_with_text('invalid_credentials')
-        if user.blocked:
-            return error_with_text('user_blocked')
 
         # Deleting previous token
         Token.objects.filter(user=user).delete()

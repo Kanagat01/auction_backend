@@ -70,7 +70,7 @@ class _OrderMake:
         if self.order.status == OrderStatus.being_executed:
             Notification.objects.create(
                 user=self.order.transporter_manager.user,
-                title=f"Заказ",
+                title=f"Заказ отменен",
                 description=f"Транспортировка №{self.order.transportation_number} была отменена заказчиком",
                 type=NotificationType.ORDER_CANCELLED
             )
@@ -109,6 +109,36 @@ class _OrderMake:
 
         self.order.status = order_type
         self.order.save()
+
+        if order_type == OrderStatus.in_direct:
+            offer = self.order.offers.first()
+            Notification.objects.create(
+                user=offer.transporter_manager.user,
+                title=f"Вам назначен заказ",
+                description=(
+                    f"Вам назначена транспортировка №{self.order.transportation_number} "
+                    f"заказчиком {self.order.customer_manager.company.company_name}. "
+                    "Вы можете принять или отклонить предложение"
+                ),
+                type=NotificationType.NEW_ORDER_IN_DIRECT
+            )
+        else:
+            companies = self.order.customer_manager.company.allowed_transporter_companies.all()
+            for company in companies:
+                for manager in company.managers.all():
+                    Notification.objects.create(
+                        user=manager.user,
+                        title=f"Новый заказ в {'в аукционе' if order_type == OrderStatus.in_auction else 'в торгах'}",
+                        description=(
+                            f"Транспортировка №{self.order.transportation_number} добавлена "
+                            f"{'в аукцион' if order_type == OrderStatus.in_auction else 'в торги'}"
+                        ),
+                        type=(
+                            NotificationType.NEW_ORDER_IN_AUCTION
+                            if order_type == OrderStatus.in_auction
+                            else NotificationType.NEW_ORDER_IN_BIDDING
+                        )
+                    )
 
     def offer_accepted(self, offer):
         """

@@ -3,13 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
-from api_users.permissions.transporter_permissions import IsTransporterManagerAccount
-from api_users.permissions.customer_permissions import IsCustomerManagerAccount
+from api_users.permissions import IsActiveUser, IsTransporterManagerAccount, IsCustomerManagerAccount
 from api_notification.models import Notification, NotificationType
 
 
 class GetOffers(APIView):
-    permission_classes = [IsTransporterManagerAccount]
+    permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def get(self, request: Request):
         offers = OrderOffer.objects.filter(
@@ -18,7 +17,7 @@ class GetOffers(APIView):
 
 
 class AddOrderOfferView(APIView):
-    permission_classes = [IsTransporterManagerAccount]
+    permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def post(self, request: Request):
         serializer = AddOfferToOrderSerializer(
@@ -45,7 +44,7 @@ class AddOrderOfferView(APIView):
 
 
 class AcceptOffer(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = GetOrderOfferByIdSerializer(
@@ -55,20 +54,11 @@ class AcceptOffer(APIView):
 
         offer: OrderOffer = serializer.validated_data['order_offer_id']
         offer.make_accepted()
-        Notification.objects.create(
-            user=offer.transporter_manager.user,
-            title=f"Ваше предложение принято",
-            description=(
-                f'Ваше предложение на транспортировку №{offer.order.transportation_number} было принято. '
-                'Статус заказа изменен на "Выполняется"'
-            ),
-            type=NotificationType.NEW_ORDER_BEING_EXECUTED
-        )
         return success_with_text(OrderSerializer(offer.order).data)
 
 
 class RejectOffer(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = GetOrderOfferByIdSerializer(
@@ -87,7 +77,7 @@ class RejectOfferTransporter(APIView):
     Когда назначили заказ чеерез "напрямую", тогда перевозчик может отменить
     Вот это для этого и надо))
     """
-    permission_classes = [IsTransporterManagerAccount]
+    permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def post(self, request: Request):
         serializer = GetOrderOfferByIdSerializer(data=request.data)
@@ -98,21 +88,11 @@ class RejectOfferTransporter(APIView):
         if offer.transporter_manager != request.user.transporter_manager:
             return error_with_text('You are not the owner of this offer')
         offer.make_rejected()
-        Notification.objects.create(
-            user=offer.order.customer_manager.user,
-            title=f"Заказ отклонена",
-            description=(
-                f"Транспортировка №{offer.order.transportation_number} отклонена "
-                f"Перевозчиком {offer.transporter_manager.company.company_name}"
-            ),
-            type=NotificationType.INFO
-        )
-
         return success_with_text(OrderSerializer(offer.order).data)
 
 
 class AcceptOfferTransporter(APIView):
-    permission_classes = [IsTransporterManagerAccount]
+    permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def post(self, request: Request):
         serializer = GetOrderOfferByIdSerializer(data=request.data)
@@ -123,13 +103,4 @@ class AcceptOfferTransporter(APIView):
         if offer.transporter_manager != request.user.transporter_manager:
             return error_with_text('You are not the owner of this offer')
         offer.make_accepted()
-        Notification.objects.create(
-            user=offer.order.customer_manager.user,
-            title=f"Заказ перешла в работу",
-            description=(
-                f"Транспортировка №{offer.order.transportation_number} принята "
-                f"Перевозчиком {offer.transporter_manager.company.company_name}"
-            ),
-            type=NotificationType.INFO
-        )
         return success_with_text(OrderSerializer(offer.order).data)

@@ -1,8 +1,8 @@
 from api_users.models import UserTypes
-from api_users.permissions.common_permissions import IsAuthenticatedWithBlocked
+from rest_framework.permissions import IsAuthenticated
 
 
-class IsCustomerCompanyAccount(IsAuthenticatedWithBlocked):
+class IsCustomerCompanyAccount(IsAuthenticated):
     def has_permission(self, request, view):
         is_authenticated = super().has_permission(request, view)
         if not is_authenticated:
@@ -10,7 +10,7 @@ class IsCustomerCompanyAccount(IsAuthenticatedWithBlocked):
         return request.user.user_type == UserTypes.CUSTOMER_COMPANY
 
 
-class IsCustomerManagerAccount(IsAuthenticatedWithBlocked):
+class IsCustomerManagerAccount(IsAuthenticated):
     def has_permission(self, request, view):
         is_authenticated = super().has_permission(request, view)
         if not is_authenticated:

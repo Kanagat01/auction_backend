@@ -95,7 +95,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'api_users.permissions.IsAuthenticatedWithBlocked',
+        'api_users.permissions.IsAuthenticated',
     ],
     'EXCEPTION_HANDLER': 'backend.global_functions.custom_exception_handler',
 }

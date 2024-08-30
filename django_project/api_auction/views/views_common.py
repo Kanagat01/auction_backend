@@ -26,6 +26,8 @@ class FindCargoView(APIView):
             driver = DriverProfile.objects.get(machine_number=machine_number)
             order = OrderModel.objects.get(
                 transportation_number=transportation_number, driver=driver)
+            if order.customer_manager.company.subscription.codename != "all_functionality_and_find_cargo":
+                return error_with_text("service is not available with current company subscription")
             return success_with_text(OrderSerializer(order, for_order_viewer=(not request.user.is_authenticated)).data)
         except DriverProfile.DoesNotExist:
             return error_with_text("driver_not_found")

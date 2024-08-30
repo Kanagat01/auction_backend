@@ -3,11 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from api_auction.models import *
 from api_auction.serializers import *
-from api_users.permissions.customer_permissions import IsCustomerManagerAccount
+from api_users.permissions import IsActiveUser, IsCustomerManagerAccount
 
 
 class AddStageToOrderView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
@@ -31,7 +31,7 @@ class AddStageToOrderView(APIView):
 
 
 class EditStageView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderCoupleSerializer(
@@ -59,7 +59,7 @@ class EditStageView(APIView):
 
 
 class DeleteStageView(APIView):
-    permission_classes = [IsCustomerManagerAccount]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
         serializer = CustomerGetOrderCoupleSerializer(

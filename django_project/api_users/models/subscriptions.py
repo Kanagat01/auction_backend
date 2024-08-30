@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 
 
 class Subscription(models.Model):
@@ -7,8 +8,10 @@ class Subscription(models.Model):
 
     name = models.CharField(max_length=100, verbose_name="Название тарифа")
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Стоимость")
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)], verbose_name="Стоимость")
     days_without_payment = models.IntegerField(
+        validators=[MinValueValidator(0)],
         verbose_name="Количество дней без оплаты")
 
     class Meta:
@@ -16,6 +19,11 @@ class Subscription(models.Model):
 
 
 class CustomerSubscription(Subscription):
+    """
+    Тариф для Заказчика
+    Обьекты создаются автоматически в миграции 0015
+    """
+
     class Meta:
         verbose_name = "Тариф"
         verbose_name_plural = "Тарифы Заказчик"
@@ -25,6 +33,11 @@ class CustomerSubscription(Subscription):
 
 
 class TransporterSubscription(Subscription):
+    """
+    Тариф для Перевозчика
+    Обьекты создаются автоматически в миграции 0015
+    """
+
     win_percentage_fee = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="% от суммы выигранной перевозки")
 

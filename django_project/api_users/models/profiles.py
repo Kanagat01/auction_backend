@@ -64,6 +64,16 @@ class BaseCompany(models.Model):
     class Meta:
         abstract = True
 
+    def save(self, *args, **kwargs):
+        if self.subscription and self.user.has_unpaid_subscription and self.balance >= self.subscription.price:
+            self.balance -= self.subscription.price
+            self.user.has_unpaid_subscription = False
+            for manager in self.managers.all():
+                manager.user.has_unpaid_subscription = False
+                manager.user.save()
+            self.user.save()
+        super().save(*args, **kwargs)
+
 
 class CustomerCompany(BaseCompany):
     user = models.OneToOneField(
@@ -76,13 +86,6 @@ class CustomerCompany(BaseCompany):
     class Meta:
         verbose_name = 'Компания заказчика'
         verbose_name_plural = 'Компании заказчиков'
-
-    def save(self, *args, **kwargs):
-        if self.subscription and not self.user.is_active and self.balance >= self.subscription.price:
-            self.balance -= self.subscription.price
-            self.user.is_active = True
-            self.user.save()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} Компания заказчика - [{self.company_name}]'
@@ -114,13 +117,6 @@ class TransporterCompany(BaseCompany):
     class Meta:
         verbose_name = 'Компания перевозчика'
         verbose_name_plural = 'Компании перевозчиков'
-
-    def save(self, *args, **kwargs):
-        if self.subscription and not self.user.is_active and self.balance >= self.subscription.price:
-            self.balance -= self.subscription.price
-            self.user.is_active = True
-            self.user.save()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} Компания перевозчика - [{self.company_name}]'
