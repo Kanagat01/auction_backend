@@ -13,13 +13,13 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = bool(os.environ.get("DEBUG", default=1))
 
-# ALLOWED_HOSTS = os.environ.get(
-#     "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split(" ")
 ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "*").split(" ")  # not for production
+    "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split(" ")
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS", "").split(" ")
 
-# CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(" ")
 CORS_ALLOW_ALL_ORIGINS = True
+SECURE_SSL_REDIRECT = True
 
 REACT_RESET_PASSWORD_URL = os.environ.get(
     "REACT_RESET_PASSWORD_URL", "http://localhost:5173/reset-password-confirm/")
