@@ -54,8 +54,8 @@ services:
     volumes:
       - static_volume:/home/app/staticfiles
       - media_volume:/home/app/mediafiles
-      - ./etc/ssl/cargonika.crt:/certificate/cargonika.crt:ro
-      - ./etc/ssl/cargonika.key:/certificate/cargonika.key:ro
+      - /etc/ssl/cargonika.crt:/certificate/cargonika.crt:ro
+      - /etc/ssl/cargonika.key:/certificate/cargonika.key:ro
 
     ports:
       - '80:80'
