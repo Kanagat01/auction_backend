@@ -1,7 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from api_users.models import UserModel, CustomerCompany, TransporterCompany, CustomerManager, TransporterManager
+from api_users.models import UserModel, UserTypes, CustomerCompany, TransporterCompany, CustomerManager, TransporterManager, CustomerSubscription, TransporterSubscription
 
 
 class RegisterManagerSerializer(serializers.Serializer):
@@ -65,3 +65,21 @@ class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=200)
     new_password = serializers.CharField(max_length=200)
     repeat_password = serializers.CharField(max_length=200)
+
+
+class ChangeSubscriptionSerializer(serializers.Serializer):
+    subscription_id = serializers.IntegerField()
+
+    def validate_subscription_id(self, value):
+        user_type = self.context['user_type']
+        try:
+            if user_type == UserTypes.CUSTOMER_COMPANY:
+                subscription = CustomerSubscription.objects.get(id=value)
+            elif user_type == UserTypes.TRANSPORTER_COMPANY:
+                subscription = TransporterSubscription.objects.get(id=value)
+            else:
+                raise serializers.ValidationError(
+                    "Only company accounts can change subscription")
+        except [CustomerSubscription.DoesNotExist, TransporterSubscription.DoesNotExist]:
+            raise serializers.ValidationError("subscription does not exist")
+        return subscription

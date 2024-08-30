@@ -161,3 +161,25 @@ class EditManager(APIView):
             return success_with_text(CustomerManagerSerializer(manager, from_company=True).data)
         else:
             return success_with_text(TransporterManagerSerializer(manager, from_company=True).data)
+
+
+class ChangeSubscription(APIView):
+    permission_classes = [IsCustomerCompanyAccount |
+                          IsTransporterCompanyAccount]
+
+    def post(self, request: Request):
+        user: UserModel = request.user
+        serializer = ChangeSubscriptionSerializer(
+            data=request.data, context={'user_type': user.user_type})
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        subscription = serializer.validated_data["subscription_id"]
+        if user.user_type == UserTypes.CUSTOMER_COMPANY:
+            user.customer_company.subscription = subscription
+            user.customer_company.save()
+            return success_with_text(CustomerCompanySerializer(user.customer_company).data)
+        else:
+            user.transporter_company.subscription = subscription
+            user.transporter_company.save()
+            return success_with_text(TransporterCompanySerializer(user.transporter_company).data)
