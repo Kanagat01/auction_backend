@@ -19,7 +19,6 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS", "").split(" ")
 
 CORS_ALLOW_ALL_ORIGINS = True
-SECURE_SSL_REDIRECT = True
 
 REACT_RESET_PASSWORD_URL = os.environ.get(
     "REACT_RESET_PASSWORD_URL", "http://localhost:5173/reset-password-confirm/")
