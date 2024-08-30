@@ -37,7 +37,6 @@ class UserModel(AbstractUser):
     # transporter_company
     # transporter_manager
     # driver_profile
-    # order_viewer
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -63,10 +62,6 @@ class UserModel(AbstractUser):
         if self.user_type == UserTypes.DRIVER and not hasattr(self, 'driver_profile'):
             raise UserSaveException(
                 f'User {self.id} is "{self.user_type}" but has no "driver_profile"')
-
-        if self.user_type == UserTypes.ORDER_VIEWER and not hasattr(self, 'order_viewer'):
-            raise UserSaveException(
-                f'User {self.id} is "{self.user_type}" but has no "order_viewer"')
 
         super().save(*args, **kwargs)
 
