@@ -48,7 +48,7 @@ services:
     volumes:
       - ./django_project/:/usr/src/app/
     env_file:
-      - ./django_project/.env
+      - .env
     depends_on:
       - db
 
