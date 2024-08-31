@@ -11,15 +11,24 @@ def monthly_deduct_subscription_fee():
 
     for company in [*t_companies, *c_companies]:
         subscription_price = company.subscription.price
-        today = timezone.now().date()
+        today = timezone.now()
 
         if company.balance < subscription_price:
+            company.user.has_unpaid_subscription = True
+            company.user.save()
+
+            for manager in company.managers.all():
+                manager.user.has_unpaid_subscription = False
+                manager.user.save()
+
+            next_run = today + \
+                timedelta(days=company.subscription.days_without_payment)
             Notification.objects.create(
                 user=company.user,
                 title="Недостаточно средств",
                 description=(
                     "На вашем балансе недостаточно средств для оплаты тарифа за этот месяц. "
-                    f"Пожалуйста, пополните баланс до {today + timedelta(days=company.subscription.days_without_payment)}, "
+                    f"Пожалуйста, пополните баланс до {next_run.strftime('%d.%m.%Y')}, "
                     "иначе функционал будет ограничен только просмотром информации и переходом по разделам."
                 ),
                 type=NotificationType.POPUP_NOTIFICATION
@@ -28,8 +37,7 @@ def monthly_deduct_subscription_fee():
                 'api_users.tasks.check_payment_status',
                 user_id=company.user.id,
                 schedule_type=Schedule.ONCE,
-                next_run=today +
-                timedelta(days=company.subscription.days_without_payment)
+                next_run=next_run
             )
         else:
             company.balance -= subscription_price
@@ -45,7 +53,7 @@ def check_payment_status(user_id):
     else:
         return
 
-    if company.balance < company.subscription.price:
+    if company.user.has_unpaid_subscription:
         Notification.objects.create(
             user=company.user,
             title="Функционал заблокирован",

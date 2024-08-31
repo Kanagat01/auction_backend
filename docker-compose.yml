@@ -40,6 +40,18 @@ services:
       - db
       - redis
 
+  django-qcluster:
+    build: ./django_project
+    command: python manage.py qcluster
+    networks:
+      - back
+    volumes:
+      - ./django_project/:/usr/src/app/
+    env_file:
+      - ./django_project/.env
+    depends_on:
+      - db
+
   smtp:
     build: ./smtp_server
     network_mode: host
