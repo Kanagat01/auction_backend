@@ -213,7 +213,8 @@ class CancelOrderView(APIView):
             return error_with_text(serializer.errors)
 
         order: OrderModel = serializer.validated_data['order_id']
-        order.make.cancelled()
+        order.make.cancelled(offer=order.offers.filter(
+            status=OrderOfferStatus.accepted).order_by('price').first())
 
         #  Creating a copy of the order
         # order: OrderModel = serializer.validated_data['order_id']

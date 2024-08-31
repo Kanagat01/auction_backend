@@ -29,15 +29,3 @@ class IsActiveUser(BasePermission):
 
         today = datetime.now()
         return not (user.has_unpaid_subscription and today.day > subscription.days_without_payment)
-
-
-class IsAnyOfPermissions(BasePermission):
-    """
-    Allows access if at least one of the provided permissions is granted.
-    """
-
-    def __init__(self, *permissions):
-        self.permissions = permissions
-
-    def has_permission(self, request, view):
-        return any(permission().has_permission(request, view) for permission in self.permissions)

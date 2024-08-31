@@ -56,8 +56,32 @@ class _OrderMake:
 
     def __init__(self, order: 'OrderModel'):
         self.order = order
+        self.channel_layer = get_channel_layer()
 
-    def cancelled(self):
+    def remove_order(self, user_id: int, order_status: str):
+        """
+        Удаляет заказ в режиме реального времени через сокет
+        """
+        async_to_sync(self.channel_layer.group_send)(f"user_orders_{user_id}", {
+            "type": "remove_order",
+            "order_id": self.order.pk,
+            "order_status": order_status
+        })
+
+    def add_or_update_order(self, exclude: list = None):
+        """
+        Обновляет заказ в режиме реального времени через сокет
+        """
+        user_ids = self.order.get_user_ids()
+        if exclude:
+            user_ids = [x for x in user_ids if x not in exclude]
+        for user_id in user_ids:
+            async_to_sync(self.channel_layer.group_send)(f"user_orders_{user_id}", {
+                "type": "add_or_update_order",
+                "order_id": self.order.pk,
+            })
+
+    def cancelled(self, offer):
         """
         Отменить заказ
         Если заказ уже завершен - нельзя отменить
@@ -74,26 +98,38 @@ class _OrderMake:
                 description=f"Транспортировка №{self.order.transportation_number} была отменена заказчиком",
                 type=NotificationType.ORDER_CANCELLED
             )
+            if (self.order.application_type.status != OrderStatus.in_direct):
+                company = self.order.transporter_manager.company
+                company.balance += offer.price * company.subscription.win_percentage_fee / 100
+                company.save()
+
+        for user_id in self.order.get_user_ids():
+            self.remove_order(user_id=user_id, order_status=self.order.status)
         self.order.status = OrderStatus.cancelled
         self.order.save()
+        self.add_or_update_order()
 
     def unpublished(self):
         """
         Снять заказ с публикации (вернуть в заказы)
         Если заказ уже в "заказах" или закончен - нельзя снять с публикации
 
-        ВНИМАНИЕ: отклоняет все предложения перевозчиков
+        ВНИМАНИЕ: удаляет все предложения перевозчиков
 
         :return:
         """
         if self.order.status in [OrderStatus.completed, OrderStatus.unpublished]:
             raise ValidationError('order_is_completed_or_unpublished')
 
+        for user_id in self.order.get_user_ids():
+            self.remove_order(user_id=user_id, order_status=self.order.status)
+
         self.order.transporter_manager = None
         self.order.driver = None
         self.order.status = OrderStatus.unpublished
         self.order.offers.all().delete()
         self.order.save()
+        self.add_or_update_order()
 
     def published_to(self, order_type: str):
         """
@@ -107,8 +143,12 @@ class _OrderMake:
         if order_type not in OrderStatus.publish_to_choices():
             raise ValidationError('invalid_order_type')
 
+        for user_id in self.order.get_user_ids():
+            self.remove_order(user_id=user_id, order_status=self.order.status)
+
         self.order.status = order_type
         self.order.save()
+        self.add_or_update_order()
 
         if order_type == OrderStatus.in_direct:
             offer = self.order.offers.first()
@@ -157,9 +197,13 @@ class _OrderMake:
             OrderApplicationType.objects.create(
                 order=self.order, status=self.order.status)
 
+        for user_id in self.order.get_user_ids():
+            self.remove_order(user_id=user_id, order_status=self.order.status)
+
         self.order.transporter_manager = offer.transporter_manager
         self.order.status = OrderStatus.being_executed
         self.order.save()
+        self.add_or_update_order()
 
     def completed(self):
         """
@@ -172,6 +216,7 @@ class _OrderMake:
 
         self.order.status = OrderStatus.completed
         self.order.save()
+        self.add_or_update_order()
 
     def cancel_completion(self):
         """
@@ -184,6 +229,7 @@ class _OrderMake:
 
         self.order.status = OrderStatus.being_executed
         self.order.save()
+        self.add_or_update_order()
 
 
 class OrderModel(models.Model):
@@ -262,61 +308,12 @@ class OrderModel(models.Model):
             })
 
     def save(self, *args, **kwargs):
-        old_instance = OrderModel.objects.get(
-            pk=self.pk) if self.pk else None
-
+        is_new_order = not self.pk
         self.clean()
         super().save(*args, **kwargs)
 
-        channel_layer = get_channel_layer()
-
-        def remove_order(user_id: int, order_status: str):
-            async_to_sync(channel_layer.group_send)(f"user_orders_{user_id}", {
-                "type": "remove_order",
-                "order_id": self.pk,
-                "order_status": order_status
-            })
-
-        user_ids = self.get_user_ids()
-        if old_instance and old_instance.status != self.status:
-            # если статус заказа изменился, его нужно удалить из соответствуюшего раздела на сайте
-            # у всех пользователей у которых есть доступ к этому заказу
-            if (self.status != OrderStatus.completed or old_instance.status != OrderStatus.being_executed) and \
-                    (self.status != OrderStatus.being_executed or old_instance.status != OrderStatus.completed):
-                # Если статус меняется между завершенным и выполняющимся, то удалять не нужно ведь эти заказы находятся на одной странице
-                for user_id in user_ids:
-                    remove_order(user_id=user_id,
-                                 order_status=old_instance.status)
-
-        elif old_instance and old_instance.transporter_manager and old_instance.transporter_manager != self.transporter_manager:
-            tr_manager = old_instance.transporter_manager
-            if not self.transporter_manager or tr_manager.company == self.transporter_manager.company:
-                # если компания перевозчика изменилась, заказ нужно удалить у менеджеров этой компании и у аккаунта этой компании
-                remove_order(
-                    user_id=tr_manager.company.user.pk, order_status=self.status)
-                for manager in tr_manager.company.managers.all():
-                    remove_order(user_id=manager.user.pk,
-                                 order_status=self.status)
-
-        is_new_data = False if old_instance else True
-        if old_instance:
-            # проверяем изменилось ли какое нибудь поле
-            new_values = {field.name: getattr(
-                self, field.name) for field in self._meta.fields}
-            old_values = {field.name: getattr(
-                old_instance, field.name) for field in old_instance._meta.fields if field.name != "updated_at"}
-            for field_name, old_value in old_values.items():
-                new_value = new_values.get(field_name)
-                if old_value != new_value:
-                    is_new_data = True
-                    break
-
-        if is_new_data:
-            for user_id in user_ids:
-                async_to_sync(channel_layer.group_send)(f"user_orders_{user_id}", {
-                    "type": "add_or_update_order",
-                    "order_id": self.pk,
-                })
+        if is_new_order and self.pk:
+            self.make.add_or_update_order()
 
     @property
     def make(self):
@@ -326,6 +323,9 @@ class OrderModel(models.Model):
         return self.customer_manager.company.is_transporter_company_allowed(transporter_manager.company)
 
     def get_user_ids(self):
+        '''
+        Возвращает список id всех пользователей, которые имеют доступ к этому заказу
+        '''
         user_ids = [self.customer_manager.company.user.pk]
         for m in self.customer_manager.company.managers.all():
             user_ids.append(m.user.pk)

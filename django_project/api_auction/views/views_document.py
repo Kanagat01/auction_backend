@@ -1,5 +1,5 @@
 from api_users.models import UserTypes
-from api_users.permissions import IsActiveUser, IsAnyOfPermissions, IsTransporterManagerAccount, IsCustomerManagerAccount, IsDriverAccount
+from api_users.permissions import IsActiveUser, IsTransporterManagerAccount, IsCustomerManagerAccount, IsDriverAccount
 from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -7,27 +7,32 @@ from api_auction.serializers import *
 
 
 class AddDocumentView(APIView):
-    permission_classes = [IsActiveUser, IsAnyOfPermissions(
-        IsCustomerManagerAccount, IsTransporterManagerAccount, IsDriverAccount)]
+    permission_classes = [IsActiveUser, IsCustomerManagerAccount |
+                          IsTransporterManagerAccount | IsDriverAccount]
 
     def post(self, request: Request):
-        if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
+        user = request.user
+        if user.user_type == UserTypes.CUSTOMER_MANAGER:
             serializer = CustomerGetOrderByIdSerializer(
                 data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+
             order = serializer.validated_data['order_id']
 
-        elif request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
+        elif user.user_type == UserTypes.TRANSPORTER_MANAGER:
             serializer = TransporterGetOrderByIdSerializer(
                 data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+
             order: OrderModel = serializer.validated_data['order_id']
-            if order.transporter_manager.company != request.user.transporter_manager.company:
-                return error_with_text('OrderModel with this ID does not belong to your company.')
+            if order.transporter_manager and order.transporter_manager.company != user.transporter_manager.company:
+                return error_with_text('OrderModel with this ID does not belong to your company')
 
         else:
             serializer = DriverGetOrderByIdSerializer(
-                data=request.data, driver=request.user.driver_profile)
+                data=request.data, driver=user.driver_profile)
             if not serializer.is_valid():
                 return error_with_text(serializer.errors)
             order: OrderModel = serializer.validated_data['order_id']
@@ -37,19 +42,19 @@ class AddDocumentView(APIView):
         if not document_serializer.is_valid():
             return error_with_text(document_serializer.errors)
 
-        document_serializer.save(user=request.user, order=order)
+        document_serializer.save(user=user, order=order)
 
-        if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
+        if user.user_type == UserTypes.CUSTOMER_MANAGER:
             return success_with_text(OrderSerializer(order).data)
-        elif request.user.user_type == UserTypes.TRANSPORTER_MANAGER:
-            return success_with_text(OrderSerializerForTransporter(order, transporter_manager=request.user.transporter_manager).data)
+        elif user.user_type == UserTypes.TRANSPORTER_MANAGER:
+            return success_with_text(OrderSerializerForTransporter(order, transporter_manager=user.transporter_manager).data)
         else:
-            return success_with_text(OrderSerilizerForDriver(order, driver=request.user.driver_profile).data)
+            return success_with_text(OrderSerilizerForDriver(order, driver=user.driver_profile).data)
 
 
 class DeleteDocumentView(APIView):
-    permission_classes = [IsActiveUser, IsAnyOfPermissions(
-                          IsCustomerManagerAccount | IsDriverAccount)]
+    permission_classes = [IsActiveUser,
+                          IsCustomerManagerAccount | IsDriverAccount]
 
     def post(self, request: Request):
         if request.user.user_type == UserTypes.CUSTOMER_MANAGER:
@@ -59,7 +64,9 @@ class DeleteDocumentView(APIView):
             serializer = DriverGetDocumentByIdSerializer(
                 data=request.data, driver=request.user.driver_profile)
 
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
         document = serializer.validated_data['document_id']
         document.delete()
         return success_with_text('ok')
