@@ -1,3 +1,4 @@
+from django import forms
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import admin
@@ -22,8 +23,21 @@ class SettingsAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url, extra_context)
 
 
+class CustomerCompanyForm(forms.ModelForm):
+    allowed_transporter_companies = forms.ModelMultipleChoiceField(
+        queryset=TransporterCompany.objects.all(), required=False)
+
+    class Meta:
+        model = CustomerCompany
+        fields = '__all__'
+
+
+@admin.register(CustomerCompany)
+class CustomerCompanyAdmin(admin.ModelAdmin):
+    form = CustomerCompanyForm
+
+
 admin.site.register(UserModel)
-admin.site.register(CustomerCompany)
 admin.site.register(CustomerManager)
 admin.site.register(TransporterCompany)
 admin.site.register(TransporterManager)
