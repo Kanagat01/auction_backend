@@ -39,8 +39,7 @@ class GetUser(APIView):
             profile = TransporterManagerSerializer(
                 instance.transporter_manager).data
         elif instance.user_type == UserTypes.DRIVER:
-            profile = DriverProfileSerializer(
-                instance.driver_profile).data
+            return success_with_text(DriverProfileSerializer(instance.driver_profile).data)
         else:
             return error_with_text('user_not_found')
 

@@ -14,7 +14,7 @@ SECRET_KEY = os.environ.get(
 DEBUG = bool(os.environ.get("DEBUG", default=1))
 
 ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split(" ")
+    "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1 10.0.2.2").split(" ")
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost http://127.0.0.1").split(" ")
 
@@ -22,6 +22,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 REACT_RESET_PASSWORD_URL = os.environ.get(
     "REACT_RESET_PASSWORD_URL", "http://localhost:5173/reset-password-confirm/")
+
+SMS_LOGIN = os.environ.get(
+    "SMS_LOGIN", "")
+SMS_PASSWORD = os.environ.get(
+    "SMS_PASSWORD", "")
+
 
 if "cargonika.ru" not in ALLOWED_HOSTS:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

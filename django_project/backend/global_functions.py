@@ -1,9 +1,11 @@
 import json
+import requests
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import status
+from .settings import SMS_LOGIN, SMS_PASSWORD
 
 
 def error_with_text(text):
@@ -12,6 +14,23 @@ def error_with_text(text):
 
 def success_with_text(text):
     return Response({'status': 'success', 'message': text}, status=status.HTTP_200_OK)
+
+
+def send_sms(number: str, text: str):
+    url = f"https://{SMS_LOGIN}:{SMS_PASSWORD}@gate.smsaero.ru/v2/sms/send"
+    params = {
+        'number': number.replace("+", "").replace(" ", ""),
+        'text': text,
+        'sign': 'SMS Aero',
+    }
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(data.get('message'))
+
+    except Exception as err:
+        raise err
 
 
 def all_read_only_serializer(cls):

@@ -1,7 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-
-from api_users.models import UserModel, UserTypes, CustomerCompany, TransporterCompany, CustomerManager, TransporterManager, CustomerSubscription, TransporterSubscription
+from api_users.models import *
 
 
 class RegisterManagerSerializer(serializers.Serializer):

@@ -1,6 +1,3 @@
-import string
-import random
-import datetime
 from django.db import models
 from django.core.validators import RegexValidator
 
@@ -18,7 +15,7 @@ class DriverProfile(models.Model):
     user = models.OneToOneField(
         UserModel, on_delete=models.CASCADE, related_name='driver_profile')
     birth_date = models.DateField(
-        default=datetime.date.today, verbose_name='Дата рождения')
+        null=True, blank=True, verbose_name='Дата рождения')
     passport_number = models.CharField(
         max_length=20, verbose_name='Номер паспорта')
     phone_number = models.CharField(max_length=17, unique=True,
@@ -40,17 +37,6 @@ class DriverProfile(models.Model):
 
     def __str__(self):
         return f'{self.pk} Профиль водителя - [{self.user.full_name}]'
-
-
-class PhoneNumberChangeRequest(models.Model):
-    driver = models.OneToOneField(DriverProfile, on_delete=models.CASCADE)
-    new_phone_number = models.CharField(max_length=15)
-    confirmation_code = models.CharField(max_length=4)
-    created_at = models.DateTimeField(auto_now=True)
-
-    def generate_code(self):
-        self.confirmation_code = ''.join(random.choices(string.digits, k=4))
-        self.save()
 
 
 class BaseCompany(models.Model):
@@ -80,7 +66,7 @@ class CustomerCompany(BaseCompany):
         UserModel, on_delete=models.CASCADE, related_name='customer_company')
     subscription = models.ForeignKey(
         CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
-    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany',
+    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany', blank=True, null=True,
                                                            related_name='allowed_customer_companies', verbose_name='Перевозчики компании')
 
     class Meta:

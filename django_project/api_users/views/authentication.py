@@ -80,6 +80,8 @@ class Login(APIView):
         # Deleting previous token
         Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
+        if user.user_type == UserTypes.DRIVER:
+            return success_with_text({'token': token.key, 'driver_exist': hasattr(user, 'driver_profile')})
         return success_with_text({'token': token.key})
 
 
@@ -131,11 +133,6 @@ class PasswordResetConfirmView(APIView):
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
-        new_password = serializer.validated_data['new_password']
-        confirm_password = serializer.validated_data['confirm_password']
-        if new_password != confirm_password:
-            return error_with_text('passwords_do_not_match')
-
         reset_obj = PasswordReset.objects.filter(token=token).first()
         if not reset_obj:
             return error_with_text('invalid_token')
@@ -147,7 +144,7 @@ class PasswordResetConfirmView(APIView):
         if not user:
             return error_with_text('user_not_found')
 
-        user.set_password(new_password)
+        user.set_password(serializer.validated_data['new_password'])
         user.save()
         reset_obj.delete()
 
