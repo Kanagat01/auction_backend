@@ -66,7 +66,7 @@ class CustomerCompany(BaseCompany):
         UserModel, on_delete=models.CASCADE, related_name='customer_company')
     subscription = models.ForeignKey(
         CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
-    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany', blank=True,
+    allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany', default=[], blank=True,
                                                            related_name='allowed_customer_companies', verbose_name='Перевозчики компании')
 
     class Meta:
