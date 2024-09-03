@@ -14,11 +14,11 @@ def monthly_deduct_subscription_fee():
         today = timezone.now()
 
         if company.balance < subscription_price:
-            company.user.has_unpaid_subscription = True
+            company.user.subscription_paid = False
             company.user.save()
 
             for manager in company.managers.all():
-                manager.user.has_unpaid_subscription = False
+                manager.user.subscription_paid = False
                 manager.user.save()
 
             next_run = today + \
@@ -53,7 +53,7 @@ def check_payment_status(user_id):
     else:
         return
 
-    if company.user.has_unpaid_subscription:
+    if not company.user.subscription_paid:
         Notification.objects.create(
             user=company.user,
             title="Функционал заблокирован",

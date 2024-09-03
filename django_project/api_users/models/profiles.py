@@ -51,11 +51,11 @@ class BaseCompany(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        if self.subscription and self.user.has_unpaid_subscription and self.balance >= self.subscription.price:
+        if self.subscription and not self.user.subscription_paid and self.balance >= self.subscription.price:
             self.balance -= self.subscription.price
-            self.user.has_unpaid_subscription = False
+            self.user.subscription_paid = True
             for manager in self.managers.all():
-                manager.user.has_unpaid_subscription = False
+                manager.user.subscription_paid = True
                 manager.user.save()
             self.user.save()
         super().save(*args, **kwargs)

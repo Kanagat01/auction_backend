@@ -28,4 +28,4 @@ class IsActiveUser(BasePermission):
             return False
 
         today = datetime.now()
-        return not (user.has_unpaid_subscription and today.day > subscription.days_without_payment)
+        return user.subscription_paid or today.day <= subscription.days_without_payment

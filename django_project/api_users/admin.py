@@ -37,7 +37,14 @@ class CustomerCompanyAdmin(admin.ModelAdmin):
     form = CustomerCompanyForm
 
 
-admin.site.register(UserModel)
+@admin.register(UserModel)
+class UserModelAdmin(admin.ModelAdmin):
+    list_display = ['id', 'full_name', 'email',
+                    'user_type', 'subscription_paid']
+    search_fields = ['id', 'full_name', 'email']
+    list_filter = ['user_type', 'subscription_paid']
+
+
 admin.site.register(CustomerManager)
 admin.site.register(TransporterCompany)
 admin.site.register(TransporterManager)
