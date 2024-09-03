@@ -14,7 +14,7 @@ def schedule_monthly_task(sender, **kwargs):
             year = today.year + 1 if today.month == 12 else today.year
             month = 1 if today.month == 12 else today.month + 1
             next_run = timezone.datetime(
-                year=year, month=month, day=1, hour=0, minute=0)
+                year=year, month=month, day=1, hour=0, minute=0, tzinfo=timezone.get_current_timezone())
         Schedule.objects.filter(
             func='api_users.tasks.monthly_deduct_subscription_fee').delete()
         schedule(
