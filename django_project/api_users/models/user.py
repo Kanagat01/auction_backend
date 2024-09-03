@@ -27,7 +27,7 @@ class UserModel(AbstractUser):
     email = models.EmailField(max_length=300, blank=True, null=True,
                               verbose_name='Электронная почта')
     has_unpaid_subscription = models.BooleanField(
-        default=False, verbose_name="Тариф не оплачен")
+        default=True, verbose_name="Тариф не оплачен")
     user_type = models.CharField(
         max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
     full_name = models.CharField(max_length=200, )
@@ -72,6 +72,11 @@ class UserModel(AbstractUser):
         if self.user_type == UserTypes.DRIVER and not hasattr(self, 'driver_profile'):
             raise UserSaveException(
                 f'User {self.pk} is "{self.user_type}" but has no "driver_profile"')
+
+        if hasattr(self, 'customer_manager'):
+            self.has_unpaid_subscription = self.customer_manager.company.user.has_unpaid_subscription
+        elif hasattr(self, 'transporter_manager'):
+            self.has_unpaid_subscription = self.transporter_manager.company.user.has_unpaid_subscription
 
         super().save(*args, **kwargs)
 
