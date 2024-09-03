@@ -16,7 +16,8 @@ def success_with_text(text):
     return Response({'status': 'success', 'message': text}, status=status.HTTP_200_OK)
 
 
-def send_sms(phone_number, code):
+def send_sms(phone_number: str, code: str):
+    phone_number = phone_number.replace("+", "")
     try:
         request_url = f'https://{SMS_LOGIN}:{SMS_PASSWORD}@gate.smsaero.ru/v2/sms/send/?number={phone_number}&sign=SMS Aero&text=Ваш код подтверждения в Cargonika: {code}'
         response = requests.get(request_url, timeout=20)

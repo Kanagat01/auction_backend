@@ -132,15 +132,17 @@ class RequestPhoneNumberChangeView(APIView):
                 driver=request.user.driver_profile, new_phone_number=phone_number)
 
         phone_change_request.generate_code()
-        try:
-            send_sms(number=phone_number,
-                     text=f"Ваш код подтверждения для изменения номера телефона: {phone_change_request.confirmation_code}")
-        except Exception as err:
-            if isinstance(err, str):
-                error_message = err
-            else:
-                error_message = str(err)
-            return error_with_text(error_message)
+
+        response = send_sms(
+            phone_number, phone_change_request.confirmation_code)
+        if response.get('success', False) is False:
+            error_msg = response.get('message', None)
+            if error_msg is None:
+                return error_with_text('sms_service_error')
+            if "Validation error" in error_msg:
+                return error_with_text('phone_number_not_valid')
+            return error_with_text('sms_service_error: ' + error_msg)
+
         return success_with_text('ok')
 
 
