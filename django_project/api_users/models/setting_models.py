@@ -4,6 +4,8 @@ from .profiles import PhoneNumberValidator
 
 
 class Settings(models.Model):
+    email = models.EmailField(max_length=300,
+                              verbose_name='Почта поддержки')
     phone_number = models.CharField(
         max_length=100, validators=[PhoneNumberValidator()], verbose_name="Телефон поддержки")
 

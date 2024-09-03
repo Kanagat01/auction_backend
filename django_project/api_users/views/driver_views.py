@@ -28,7 +28,7 @@ class RegisterDriverRequest(APIView):
         print(driver_register_request.confirmation_code)
         try:
             send_sms(number=phone_number,
-                     text=f"Ваш код подтверждения для приложения Kargonika: {driver_register_request.confirmation_code}")
+                     text=f"Ваш код подтверждения для приложения Cargonika: {driver_register_request.confirmation_code}")
         except Exception as err:
             if isinstance(err, str):
                 error_message = err

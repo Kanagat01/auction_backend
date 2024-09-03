@@ -11,6 +11,7 @@ auth = [
 ]
 
 common = [
+    path('get_settings/', GetSettings.as_view()),
     path('validate_token/', ValidateToken.as_view()),
     path('get_user/', GetUser.as_view()),
     path('edit_user/', EditUser.as_view()),

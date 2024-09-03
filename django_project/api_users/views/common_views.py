@@ -15,6 +15,14 @@ class ValidateToken(APIView):
         return success_with_text("ok")
 
 
+class GetSettings(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        settings = Settings.objects.first()
+        return success_with_text(SettingsSerializer(settings).data if settings else {})
+
+
 class GetUser(APIView):
     """
     Get user info
