@@ -24,11 +24,15 @@ def send_sms(number: str, text: str):
         'sign': 'SMS Aero',
     }
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=60)
         data = response.json()
         if not data.get('success'):
             raise Exception(data.get('message'))
 
+    except requests.Timeout:
+        raise Exception("Сервис SMS не отвечает, попробуйте позже.")
+    except requests.RequestException as e:
+        raise Exception(f"Ошибка при отправке SMS: {str(e)}")
     except Exception as err:
         raise err
 
