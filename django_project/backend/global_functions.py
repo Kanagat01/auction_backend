@@ -16,25 +16,14 @@ def success_with_text(text):
     return Response({'status': 'success', 'message': text}, status=status.HTTP_200_OK)
 
 
-def send_sms(number: str, text: str):
-    url = f"https://{SMS_LOGIN}:{SMS_PASSWORD}@gate.smsaero.ru/v2/sms/send"
-    params = {
-        'number': number.replace("+", "").replace(" ", ""),
-        'text': text,
-        'sign': 'SMS Aero',
-    }
+def send_sms(phone_number, code):
     try:
-        response = requests.get(url, params=params, timeout=60)
-        data = response.json()
-        if not data.get('success'):
-            raise Exception(data.get('message'))
-
-    except requests.Timeout:
-        raise Exception("Сервис SMS не отвечает, попробуйте позже.")
-    except requests.RequestException as e:
-        raise Exception(f"Ошибка при отправке SMS: {str(e)}")
-    except Exception as err:
-        raise err
+        request_url = f'https://{SMS_LOGIN}:{SMS_PASSWORD}@gate.smsaero.ru/v2/sms/send/?number={phone_number}&sign=SMS Aero&text=Ваш код подтверждения в Cargonika: {code}'
+        response = requests.get(request_url, timeout=20)
+        return response.json()
+    except Exception as e:
+        print('Error:', str(e))
+    return {}
 
 
 def all_read_only_serializer(cls):
