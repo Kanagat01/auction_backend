@@ -30,7 +30,7 @@ class UserModel(AbstractUser):
         default=False, verbose_name="Тариф оплачен")
     user_type = models.CharField(
         max_length=20, choices=UserTypes.choices(), null=False, verbose_name='Тип')
-    full_name = models.CharField(max_length=200, )
+    full_name = models.CharField(max_length=200, verbose_name='Полное имя')
     REQUIRED_FIELDS = ['full_name', 'user_type']
 
     # relationship fields:
