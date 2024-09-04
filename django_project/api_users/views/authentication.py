@@ -30,7 +30,7 @@ class RegisterTransporterCompanyView(APIView):
         TransporterCompany.objects.create(user=user,
                                           company_name=serializer.validated_data['company_name'])
         user.set_password(serializer.validated_data['password'])
-
+        user.save()
         token = Token.objects.create(user=user)
         return success_with_text({'token': token.key})
 
@@ -51,8 +51,9 @@ class RegisterCustomerCompanyView(APIView):
         )
         CustomerCompany.objects.create(user=user,
                                        company_name=serializer.validated_data['company_name'])
+        print(serializer.validated_data['password'])
         user.set_password(serializer.validated_data['password'])
-
+        user.save()
         token = Token.objects.create(user=user)
         return success_with_text({'token': token.key})
 

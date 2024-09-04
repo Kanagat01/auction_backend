@@ -92,6 +92,7 @@ class SetDriverProfileData(APIView):
 
             user.set_password(
                 serializer.validated_data["new_password"])
+            user.save()
         else:
             serializer = SetDriverProfileDataSerializer(
                 data={"phone_number": user.username, **request.data}
