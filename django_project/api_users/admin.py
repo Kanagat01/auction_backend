@@ -42,6 +42,7 @@ class UserModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'full_name', 'email',
                     'user_type', 'subscription_paid']
     search_fields = ['id', 'full_name', 'email']
+    search_help_text = 'Ищите по: ID, полному имени или email'
     list_filter = ['user_type', 'subscription_paid']
 
 

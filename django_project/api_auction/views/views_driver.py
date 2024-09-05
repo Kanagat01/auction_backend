@@ -13,10 +13,10 @@ class GetOrder(APIView):
 
     def get(self, request: Request):
         driver: DriverProfile = request.user.driver_profile
-        orders = driver.orders.filter(status=OrderStatus.being_executed)
-        if not orders.exists():
+        order = driver.orders.filter(status=OrderStatus.being_executed).first()
+        if not order:
             return error_with_text("you don't have being executed orders")
-        return success_with_text(OrderSerilizerForDriver(orders.first(), driver=driver).data)
+        return success_with_text(OrderSerilizerForDriver(order, driver=driver).data)
 
 
 class MakeOrderStageCompleted(APIView):
@@ -37,8 +37,8 @@ class MakeOrderStageCompleted(APIView):
             order_stage_couple.unload_stage.completed = True
             order_stage_couple.unload_stage.save()
 
-        if order_stage_couple.load_stage.completed and order_stage_couple.unload_stage.completed:
-            order: OrderModel = order_stage_couple.order
+        order: OrderModel = order_stage_couple.order
+        if order.stages.count() == order.stages.filter(load_stage__completed=True, unload_stage__completed=True).count():
             for user in [order.transporter_manager.user, order.customer_manager.user]:
                 Notification.objects.create(
                     user=user,

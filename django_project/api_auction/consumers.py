@@ -42,3 +42,42 @@ class OrderConsumer(BaseAuthorisedConsumer):
     async def remove_order(self, event):
         if self.status == event["order_status"]:
             await self.send_json({"remove_order": event["order_id"]})
+
+
+class DriverConsumer(BaseAuthorisedConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.status = None
+
+    def get_group_name(self):
+        return f"driver_{self.user.id}"
+
+    async def receive_json(self, data):
+        '''
+        Чтобы создать геоточку {latitude: double, longitude: double}
+        '''
+        is_driver = await database_sync_to_async(lambda: hasattr(self.user, 'driver_profile'))()
+        if not is_driver:
+            await self.send_json({"error": "you are not a driver"})
+            await self.disconnect()
+            return
+
+        order = await database_sync_to_async(
+            lambda: self.user.driver_profile.orders.filter(
+                status=OrderStatus.being_executed
+            ).first()
+        )()
+        if not order:
+            await self.send_json({"error": "you don't have being executed orders"})
+            return
+
+        tracking_id = await database_sync_to_async(lambda: order.tracking.id)()
+        serializer = OrderTrackingGeoPointSerializer(
+            data={'tracking': tracking_id, **data})
+        
+        is_valid = await database_sync_to_async(serializer.is_valid)()
+        if is_valid:
+            await database_sync_to_async(serializer.save)()
+            await self.send_json({"success": True})
+        else:
+            await self.send_json({"error": serializer.errors})

@@ -13,9 +13,8 @@ class AddDriverData(APIView):
     permission_classes = [IsActiveUser, IsTransporterManagerAccount]
 
     def post(self, request: Request):
-        order_id = request.data.pop("order_id")
         order_serializer = TransporterGetOrderByIdSerializer(
-            data={"order_id": order_id}, context={'request': request})
+            data=request.data, context={'request': request})
         if not order_serializer.is_valid():
             return error_with_text(order_serializer.errors)
 

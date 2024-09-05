@@ -91,7 +91,7 @@ class CustomerManager(models.Model):
         verbose_name_plural = 'Менеджеры заказчиков'
 
     def __str__(self):
-        return f'{self.pk} Менеджер заказчика - [{self.user}]'
+        return f'#{self.pk} {self.user.full_name}'
 
 
 class TransporterCompany(BaseCompany):
@@ -122,4 +122,4 @@ class TransporterManager(models.Model):
         verbose_name_plural = 'Менеджеры перевозчиков'
 
     def __str__(self):
-        return f'{self.pk} Менеджер перевозчика - [{self.user}]'
+        return f'#{self.pk} {self.user.full_name}'
