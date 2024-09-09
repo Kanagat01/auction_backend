@@ -212,7 +212,7 @@ class _OrderMake:
         :return:
         """
         if self.order.status != OrderStatus.being_executed:
-            raise ValidationError('order_is_not_being_executed')
+            raise ValidationError(f'order_status_is:{self.order.status}')
 
         self.order.status = OrderStatus.completed
         self.order.save()

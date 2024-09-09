@@ -265,6 +265,8 @@ class PublishOrderToView(APIView):
                 return error_with_text(direct_serializer.errors)
             transporter_manager = direct_serializer.validated_data['transporter_company_id'].get_manager(
             )
+            if transporter_manager is None:
+                return error_with_text("transporter_company has no manager")
             price = direct_serializer.validated_data['price']
             OrderOffer.objects.create(
                 order=order, transporter_manager=transporter_manager, price=price)

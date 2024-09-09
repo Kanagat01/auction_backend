@@ -3,7 +3,6 @@ from urllib.parse import parse_qs
 from django.core.asgi import get_asgi_application
 from channels.db import database_sync_to_async
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator
 
 
 class QueryAuthMiddleware:
@@ -26,11 +25,9 @@ from api_auction.routing import websocket_urlpatterns as auction_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AllowedHostsOriginValidator(
-        QueryAuthMiddleware(
+    "websocket": QueryAuthMiddleware(
             URLRouter(notification_urlpatterns + auction_urlpatterns)
         ),
-    ),
 })
 
 
