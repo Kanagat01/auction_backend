@@ -71,7 +71,12 @@ class DriverConsumer(BaseAuthorisedConsumer):
             await self.send_json({"error": "you don't have being executed orders"})
             return
 
-        tracking_id = await database_sync_to_async(lambda: order.tracking.id)()
+        try:
+            tracking_id = await database_sync_to_async(lambda: order.tracking.id)()
+        except OrderModel.tracking.RelatedObjectDoesNotExist:
+            tracking = await database_sync_to_async(OrderTracking.objects.create)(order=order)
+            tracking_id = tracking.id
+            
         serializer = OrderTrackingGeoPointSerializer(
             data={'tracking': tracking_id, **data})
         
