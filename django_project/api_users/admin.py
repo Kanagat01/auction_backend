@@ -23,31 +23,45 @@ class SettingsAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url, extra_context)
 
 
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ['id', 'company_name', 'subscription_paid']
+    list_filter = ['subscription_paid']
+
+
+class TransporterCompanyForm(forms.ModelForm):
+    class Meta:
+        model = TransporterCompany
+        fields = ['user', 'company_name', 'details', 'balance', 'subscription', 'subscription_paid']
+
+
+@admin.register(TransporterCompany)
+class TransporterCompanyAdmin(CompanyAdmin):
+    form = TransporterCompanyForm
+
+
 class CustomerCompanyForm(forms.ModelForm):
     allowed_transporter_companies = forms.ModelMultipleChoiceField(
-        queryset=TransporterCompany.objects.all(), required=False)
+        queryset=TransporterCompany.objects.all(), required=False, label=CustomerCompany._meta.get_field('allowed_transporter_companies').verbose_name)
 
     class Meta:
         model = CustomerCompany
-        fields = '__all__'
+        fields = ['user', 'company_name', 'details', 'allowed_transporter_companies', 'balance', 'subscription', 'subscription_paid']
 
 
 @admin.register(CustomerCompany)
-class CustomerCompanyAdmin(admin.ModelAdmin):
+class CustomerCompanyAdmin(CompanyAdmin):
     form = CustomerCompanyForm
 
 
 @admin.register(UserModel)
 class UserModelAdmin(admin.ModelAdmin):
-    list_display = ['id', 'full_name', 'email',
-                    'user_type', 'subscription_paid']
-    search_fields = ['id', 'full_name', 'email']
-    search_help_text = 'Ищите по: ID, полному имени или email'
-    list_filter = ['user_type', 'subscription_paid']
+    list_display = ['id', 'full_name', 'username','user_type']
+    search_fields = ['id', 'full_name', 'username']
+    search_help_text = 'Ищите по: ID, полному имени, имени пользователя (email или номер телефона)'
+    list_filter = ['user_type']
 
 
 admin.site.register(CustomerManager)
-admin.site.register(TransporterCompany)
 admin.site.register(TransporterManager)
 admin.site.register(DriverProfile)
 
@@ -62,11 +76,5 @@ class SubscriptionAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(CustomerSubscription)
-class CustomerSubscriptionAdmin(SubscriptionAdmin, admin.ModelAdmin):
-    pass
-
-
-@admin.register(TransporterSubscription)
-class TransporterSubscriptionAdmin(SubscriptionAdmin, admin.ModelAdmin):
-    pass
+admin.site.register(CustomerSubscription, SubscriptionAdmin)
+admin.site.register(TransporterSubscription, SubscriptionAdmin)

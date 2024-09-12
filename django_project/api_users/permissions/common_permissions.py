@@ -13,19 +13,23 @@ class IsActiveUser(BasePermission):
 
         user = request.user
         if hasattr(user, 'customer_company'):
-            subscription = user.customer_company.subscription
+            company = user.customer_company
+            subscription = company.subscription
         elif hasattr(user, 'customer_manager'):
-            subscription = user.customer_manager.company.subscription
+            company = user.customer_manager.company
+            subscription = company.subscription
         elif hasattr(user, 'transporter_company'):
-            subscription = user.transporter_company.subscription
-            if user.transporter_company.balance <= 0:
+            company = user.transporter_company
+            subscription = company.subscription
+            if company.balance <= 0:
                 return False
         elif hasattr(user, 'transporter_manager'):
-            subscription = user.transporter_manager.company.subscription
-            if user.transporter_manager.company.balance <= 0:
+            company  = user.transporter_manager.company
+            subscription = company.subscription
+            if company.balance <= 0:
                 return False
         else:
-            return False
+            return True
 
         today = datetime.now()
-        return user.subscription_paid or today.day <= subscription.days_without_payment
+        return company.subscription_paid or today.day <= subscription.days_without_payment

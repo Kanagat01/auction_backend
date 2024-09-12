@@ -6,22 +6,16 @@ from api_users.models import UserModel, TransporterCompany, CustomerCompany
 
 
 def monthly_deduct_subscription_fee():
-    t_companies = TransporterCompany.objects.filter(
-        subscription__isnull=False, user__subscription_paid=True)
-    c_companies = CustomerCompany.objects.filter(
-        subscription__isnull=False, user__subscription_paid=True)
+    t_companies = TransporterCompany.objects.filter(subscription__isnull=False)
+    c_companies = CustomerCompany.objects.filter(subscription__isnull=False)
 
     for company in [*t_companies, *c_companies]:
         subscription_price = company.subscription.price
         today = timezone.now()
 
         if company.balance < subscription_price:
-            company.user.subscription_paid = False
+            company.subscription_paid = False
             company.user.save()
-
-            for manager in company.managers.all():
-                manager.user.subscription_paid = False
-                manager.user.save()
 
             next_run = today + \
                 timedelta(days=company.subscription.days_without_payment)
@@ -55,7 +49,7 @@ def check_payment_status(user_id):
     else:
         return
 
-    if not company.user.subscription_paid:
+    if not company.subscription_paid:
         Notification.objects.create(
             user=company.user,
             title="Функционал заблокирован",

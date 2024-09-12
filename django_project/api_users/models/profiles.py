@@ -45,25 +45,23 @@ class BaseCompany(models.Model):
     balance = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, verbose_name='Баланс компании'
     )
+    subscription_paid = models.BooleanField(
+        default=False, verbose_name="Тариф оплачен")
     details = models.TextField(verbose_name="Реквизиты", blank=True, null=True)
 
     class Meta:
         abstract = True
 
     def save(self, *args, **kwargs):
-        if self.subscription and not self.user.subscription_paid and self.balance >= self.subscription.price:
+        if self.subscription and not self.subscription_paid and self.balance >= self.subscription.price:
             self.balance -= self.subscription.price
-            self.user.subscription_paid = True
-            for manager in self.managers.all():
-                manager.user.subscription_paid = True
-                manager.user.save()
-            self.user.save()
+            self.subscription_paid = True
         super().save(*args, **kwargs)
 
 
 class CustomerCompany(BaseCompany):
     user = models.OneToOneField(
-        UserModel, on_delete=models.CASCADE, related_name='customer_company')
+        UserModel, on_delete=models.CASCADE, related_name='customer_company', verbose_name='Пользователь')
     subscription = models.ForeignKey(
         CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Тариф')
     allowed_transporter_companies = models.ManyToManyField('api_users.TransporterCompany', blank=True,
