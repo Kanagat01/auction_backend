@@ -113,7 +113,7 @@ class OrderOffer(models.Model):
         if self.order.status == OrderStatus.in_direct:
             Notification.objects.create(
                 user=self.order.customer_manager.user,
-                title=f"Заказ отклонена",
+                title=f"Заказ отклонен",
                 description=(
                     f"Транспортировка №{self.order.transportation_number} отклонена "
                     f"Перевозчиком {self.transporter_manager.company.company_name}"
@@ -136,7 +136,7 @@ class OrderOffer(models.Model):
         if self.order.status == OrderStatus.in_direct:
             Notification.objects.create(
                 user=self.order.customer_manager.user,
-                title=f"Заказ перешла в работу",
+                title=f"Заказ перешел в работу",
                 description=(
                     f"Транспортировка №{self.order.transportation_number} принята "
                     f"Перевозчиком {self.transporter_manager.company.company_name}"

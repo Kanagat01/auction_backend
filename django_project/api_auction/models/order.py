@@ -62,7 +62,7 @@ class _OrderMake:
         """
         Удаляет заказ в режиме реального времени через сокет
         """
-        async_to_sync(self.channel_layer.group_send)(f"user_orders_{user_id}", {
+        async_to_sync(self.channel_layer.group_send)(f"user_{user_id}", {
             "type": "remove_order",
             "order_id": self.order.pk,
             "order_status": order_status
@@ -76,7 +76,7 @@ class _OrderMake:
         if exclude:
             user_ids = [x for x in user_ids if x not in exclude]
         for user_id in user_ids:
-            async_to_sync(self.channel_layer.group_send)(f"user_orders_{user_id}", {
+            async_to_sync(self.channel_layer.group_send)(f"user_{user_id}", {
                 "type": "add_or_update_order",
                 "order_id": self.order.pk,
             })

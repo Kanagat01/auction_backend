@@ -20,13 +20,12 @@ class QueryAuthMiddleware:
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django_asgi_app = get_asgi_application()
 
-from api_notification.routing import websocket_urlpatterns as notification_urlpatterns
-from api_auction.routing import websocket_urlpatterns as auction_urlpatterns
+from .routing import websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": QueryAuthMiddleware(
-            URLRouter(notification_urlpatterns + auction_urlpatterns)
+            URLRouter(websocket_urlpatterns)
         ),
 })
 

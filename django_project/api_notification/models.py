@@ -44,7 +44,7 @@ class Notification(models.Model):
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"user_notifications_{self.user.pk}", {
+            f"user_{self.user.pk}", {
                 "type": "send_notification",
                 "notification_id": self.pk
             }

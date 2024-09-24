@@ -1,3 +1,5 @@
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django.db import models
 from django.core.validators import RegexValidator
 
@@ -57,6 +59,16 @@ class BaseCompany(models.Model):
             self.balance -= self.subscription.price
             self.subscription_paid = True
         super().save(*args, **kwargs)
+        
+        channel_layer = get_channel_layer()
+        user_ids = [self.user.pk, *[m.user.id for m in self.managers.all()]]
+        for user_id in user_ids:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{user_id}", {
+                    "type": "update_balance",
+                    "new_balance": float(self.balance)
+                }
+            )
 
 
 class CustomerCompany(BaseCompany):
