@@ -10,8 +10,9 @@ class AddStageToOrderView(APIView):
     permission_classes = [IsActiveUser, IsCustomerManagerAccount]
 
     def post(self, request: Request):
+        customer_manager: CustomerManager = request.user.customer_manager
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -19,9 +20,8 @@ class AddStageToOrderView(APIView):
         if not stage_serializer.is_valid():
             return error_with_text(stage_serializer.errors)
 
-        company = request.user.customer_manager.company
         stage_number = stage_serializer.validated_data['order_stage_number']
-        if OrderStageCouple.check_stage_number(stage_number, company):
+        if OrderStageCouple.check_stage_number(stage_number, customer_manager.company):
             return error_with_text('order_stage_number_must_be_unique')
 
         order = serializer.validated_data['order_id']
@@ -35,7 +35,7 @@ class EditStageView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderCoupleSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -63,7 +63,7 @@ class DeleteStageView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderCoupleSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 

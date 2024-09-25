@@ -23,12 +23,8 @@ class EditManagerSerializer(serializers.Serializer):
     email = serializers.EmailField()
     full_name = serializers.CharField(max_length=200)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user: UserModel, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'request' not in self.context:
-            raise serializers.ValidationError(
-                "Request is required in context. [Contact to developer]")
-        user = self.context['request'].user
         if hasattr(user, 'customer_company'):
             self.company: CustomerCompany = user.customer_company
         elif hasattr(user, "transporter_company"):

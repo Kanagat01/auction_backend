@@ -3,15 +3,9 @@ from rest_framework import serializers
 
 
 class BaseCustomerSerializer(serializers.Serializer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, customer_manager: CustomerManager, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'request' not in self.context:
-            raise serializers.ValidationError(
-                "Request is required in context. [Contact to developer]")
-        if not hasattr(self.context['request'].user, 'customer_manager'):
-            raise serializers.ValidationError(
-                "Request user must be a CustomerManager. [Contact to developer]")
-        self.customer_manager: CustomerManager = self.context['request'].user.customer_manager
+        self.customer_manager = customer_manager
 
 
 class CustomerGetOrderByIdSerializer(BaseCustomerSerializer):
@@ -104,16 +98,9 @@ class TransporterGetOrderByIdSerializer(serializers.Serializer):
     """
     order_id = serializers.IntegerField()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,transporter_manager: TransporterManager, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'request' not in self.context:
-            raise serializers.ValidationError(
-                "Request is required in context. [Contact to developer]")
-        if not hasattr(self.context['request'].user, 'transporter_manager'):
-            raise serializers.ValidationError(
-                "Request user must be a TransporterManager. [Contact to developer]")
-        self.transporter_manager: TransporterManager = self.context[
-            'request'].user.transporter_manager
+        self.transporter_manager: TransporterManager = transporter_manager
 
     def validate_order_id(self, value):
         try:

@@ -80,7 +80,11 @@ class GetOrdersView(APIView):
             company = user.customer_manager.company if user_type == UserTypes.CUSTOMER_MANAGER else user.customer_company
             filter_kwargs["customer_manager__company"] = company
         else:
-            company = self.get_transporter_company(user, user_type)
+            if user_type == UserTypes.TRANSPORTER_MANAGER:
+                company = user.transporter_manager.company
+            else:
+                company = user.transporter_company
+        
             if status in [OrderStatus.in_auction, OrderStatus.in_bidding]:
                 filter_kwargs['customer_manager__company__in'] = company.allowed_customer_companies.all(
                 )
@@ -89,18 +93,18 @@ class GetOrdersView(APIView):
 
         return filter_kwargs
 
-    def get_transporter_company(self, user, user_type):
-        if user_type == UserTypes.TRANSPORTER_MANAGER:
-            return user.transporter_manager.company
-        return user.transporter_company
-
     def get_orders(self, status, filter_kwargs, user, user_type, status_filter):
         if status == OrderStatus.in_direct and user_type in [UserTypes.TRANSPORTER_COMPANY, UserTypes.TRANSPORTER_MANAGER]:
             return self.get_direct_orders(filter_kwargs, user, user_type, status_filter)
         return OrderModel.objects.filter(status_filter, **filter_kwargs)
 
     def get_direct_orders(self, filter_kwargs, user, user_type, status_filter):
-        manager_filter = self.get_manager_filter(user, user_type)
+        if user_type == UserTypes.TRANSPORTER_MANAGER:
+            company = user.transporter_manager.company
+        else:
+            company = user.transporter_company
+        manager_filter = {"transporter_manager__company": company}
+        
         return OrderModel.objects.annotate(
             has_offer=Exists(
                 OrderOffer.objects.filter(
@@ -108,10 +112,6 @@ class GetOrdersView(APIView):
             )
         ).filter(status_filter, **filter_kwargs, has_offer=True)
 
-    def get_manager_filter(self, user, user_type):
-        if user_type == UserTypes.TRANSPORTER_MANAGER:
-            return {"transporter_manager": user.transporter_manager}
-        return {"transporter_manager__company": user.transporter_company}
 
     def apply_city_filters(self, request, orders):
         city_from = request.query_params.get('city_from')
@@ -178,23 +178,3 @@ class GetOrdersView(APIView):
                 for_bidding=status == OrderStatus.in_bidding,
                 transporter_manager=user.transporter_manager
             ).data
-
-
-# def get_orders_view_decorator(cls):
-#     class GetOrdersView(APIView):
-#         permission_classes = [
-#             IsCustomerCompanyAccount | IsCustomerManagerAccount]
-
-#         def get(self, request: Request):
-#             orders = cls().get_orders(request)
-#             page = PaginationClass().paginate_queryset(orders, request)
-#             return success_with_text(OrderSerializer(page, many=True).data)
-
-#     return GetOrdersView
-
-
-# @get_orders_view_decorator
-# class GetUnpublishedOrdersView:
-#     def get_orders(self, request: Request):
-#         return OrderModel.objects.filter(customer_manager=request.user.customer_manager,
-#                                          status=OrderStatus.unpublished)

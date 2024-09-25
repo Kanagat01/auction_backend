@@ -156,7 +156,7 @@ class EditManager(APIView):
 
     def post(self, request: Request):
         serializer = EditManagerSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, user=request.user)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 

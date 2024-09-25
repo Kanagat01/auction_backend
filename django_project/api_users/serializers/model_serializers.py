@@ -48,7 +48,6 @@ class CustomerCompanySerializer(serializers.ModelSerializer):
         exclude = ['id']
 
     def get_managers(self, instance):
-        print(self.context)
         if self.context.get('from_manager'):
             return None
         return CustomerManagerSerializer(instance.managers.all(), many=True, from_company=True).data

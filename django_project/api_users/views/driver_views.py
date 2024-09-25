@@ -152,7 +152,7 @@ class ConfirmPhoneNumberChangeView(APIView):
 
     def post(self, request: Request):
         serializer = ConfirmPhoneNumberSerializer(
-            data=request.data, context={"request": request})
+            data=request.data, driver=request.user.driver_profile)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 

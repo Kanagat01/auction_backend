@@ -21,7 +21,7 @@ class AddOrderOfferView(APIView):
 
     def post(self, request: Request):
         serializer = AddOfferToOrderSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, transporter_manager=request.user.transporter_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -85,7 +85,7 @@ class RejectOfferTransporter(APIView):
             return error_with_text(serializer.errors)
 
         offer: OrderOffer = serializer.validated_data['order_offer_id']
-        if offer.transporter_manager != request.user.transporter_manager:
+        if offer.transporter_manager.company != request.user.transporter_manager.company:
             return error_with_text('You are not the owner of this offer')
         offer.make_rejected()
         return success_with_text(OrderSerializer(offer.order).data)
@@ -100,7 +100,7 @@ class AcceptOfferTransporter(APIView):
             return error_with_text(serializer.errors)
 
         offer: OrderOffer = serializer.validated_data['order_offer_id']
-        if offer.transporter_manager != request.user.transporter_manager:
+        if offer.transporter_manager.company != request.user.transporter_manager.company:
             return error_with_text('You are not the owner of this offer')
         offer.make_accepted()
         return success_with_text(OrderSerializer(offer.order).data)

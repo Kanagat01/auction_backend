@@ -100,7 +100,7 @@ class CreateOrderView(APIView):
         })
 
 
-def update_stages(request: Request, order: OrderModel, stages_data: list):
+def update_stages(customer_manager: CustomerManager, order: OrderModel, stages_data: list):
     add_stages = []
     stage_data_dict = {}
     for s in stages_data:
@@ -120,7 +120,7 @@ def update_stages(request: Request, order: OrderModel, stages_data: list):
     for idx, stage_data in enumerate(delete_stages):
         stage_data["order_stage_id"] = stage_data.pop("id")
         serializer = CustomerGetOrderCoupleSerializer(
-            data=stage_data, context={'request': request})
+            data=stage_data, customer_manager=customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -129,7 +129,7 @@ def update_stages(request: Request, order: OrderModel, stages_data: list):
     for idx, stage_data in enumerate(edit_stages):
         stage_data["order_stage_id"] = stage_data.pop("id")
         serializer = CustomerGetOrderCoupleSerializer(
-            data=stage_data, context={'request': request})
+            data=stage_data, customer_manager=customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -173,7 +173,7 @@ class EditOrderView(APIView):
     def post(self, request: Request):
 
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -192,7 +192,7 @@ class EditOrderView(APIView):
             return error_with_text('transportation_number_must_be_unique')
 
         stages_data = request.data.pop('stages', [])
-        update_stages(request=request, order=order, stages_data=stages_data)
+        update_stages(customer_manager=request.user.customer_manager, order=order, stages_data=stages_data)
         order_serializer.save()
 
         orders = OrderModel.objects.filter(
@@ -208,7 +208,7 @@ class CancelOrderView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -236,7 +236,7 @@ class UnpublishOrderView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -251,7 +251,7 @@ class PublishOrderToView(APIView):
 
     def post(self, request: Request):
         serializer = PublishOrderToSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -260,7 +260,7 @@ class PublishOrderToView(APIView):
 
         if publish_to == OrderStatus.in_direct:
             direct_serializer = PublishToDirectSerializer(
-                data=request.data, context={'request': request})
+                data=request.data, customer_manager=request.user.customer_manager)
             if not direct_serializer.is_valid():
                 return error_with_text(direct_serializer.errors)
             transporter_manager = direct_serializer.validated_data['transporter_company_id'].get_manager(
@@ -279,7 +279,7 @@ class CompleteOrderView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -294,7 +294,7 @@ class CancelOrderCompletionView(APIView):
 
     def post(self, request: Request):
         serializer = CustomerGetOrderByIdSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, customer_manager=request.user.customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 

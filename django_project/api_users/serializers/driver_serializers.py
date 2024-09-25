@@ -92,15 +92,9 @@ class PhoneNumberChangeRequestSerializer(serializers.Serializer):
 class ConfirmPhoneNumberSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(max_length=4)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, driver: DriverProfile, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'request' not in self.context:
-            raise serializers.ValidationError(
-                "Request is required in context. [Contact to developer]")
-        if not hasattr(self.context['request'].user, 'driver_profile'):
-            raise serializers.ValidationError(
-                "Request user must be a Driver. [Contact to developer]")
-        self.driver: DriverProfile = self.context['request'].user.driver_profile
+        self.driver: DriverProfile = driver
 
     def validate_confirmation_code(self, value: str):
         if len(value) != 4 or not value.isdigit():
