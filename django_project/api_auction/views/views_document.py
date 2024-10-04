@@ -11,7 +11,10 @@ class AddDocumentView(APIView):
 
     def post(self, request: Request):
         user = request.user
-        if user.user_type in [UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]:
+        user_type_check1 = user.user_type in [UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]
+        user_type_check2 = user.user_type in [UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]
+
+        if user_type_check1:
             customer_manager = user.customer_manager if hasattr(user, "customer_manager") else user.customer_company.managers.first()
             serializer = CustomerGetOrderByIdSerializer(
                 data=request.data, customer_manager=customer_manager)
@@ -20,7 +23,7 @@ class AddDocumentView(APIView):
 
             order = serializer.validated_data['order_id']
 
-        elif user.user_type in [UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]:
+        elif user_type_check2:
             transporter_manager = user.transporter_manager if hasattr(user, "transporter_manager") else user.transporter_company.get_manager()
             serializer = TransporterGetOrderByIdSerializer(
                 data=request.data, transporter_manager=transporter_manager)
@@ -45,9 +48,9 @@ class AddDocumentView(APIView):
 
         document_serializer.save(user=user, order=order)
 
-        if user.user_type == UserTypes.CUSTOMER_MANAGER:
+        if user_type_check1:
             return success_with_text(OrderSerializer(order).data)
-        elif user.user_type == UserTypes.TRANSPORTER_MANAGER:
+        elif user_type_check2:
             return success_with_text(OrderSerializerForTransporter(order, transporter_manager=user.transporter_manager).data)
         else:
             return success_with_text(OrderSerilizerForDriver(order, driver=user.driver_profile).data)
