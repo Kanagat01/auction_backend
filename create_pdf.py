@@ -3,32 +3,25 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
 
-# Путь к создаваемому PDF файлу
-pdf_file = "generated_document.pdf"
+pdf_file = "order_print.pdf"
 doc = SimpleDocTemplate(pdf_file, pagesize=A4)
-doc.setFont("Helvetica", 12)
 
-# Определяем стили
 styles = getSampleStyleSheet()
 style_normal = styles['Normal']
+style_normal.fontName = 'Helvetica'
 style_title = styles['Title']
 
-# Содержимое PDF
-content = []
+content = [
+    Paragraph("Документ Перевозки", style_title),
+    Spacer(1, 12),
+    Paragraph("Номер перевозки: 0006493170", style_normal),
+    Paragraph("Номер поставки: 0032692534", style_normal),
+    Paragraph("Распечатано: 04.10.21 17:23", style_normal),
+    Paragraph("Последние изменения: 04.10.21 15:51", style_normal),
+    Spacer(1, 12),
+    Paragraph("Резюме перевозки", style_title)
+]
 
-# Заголовок документа
-content.append(Paragraph("Документ Перевозки", style_title))
-content.append(Spacer(1, 12))  # Отступ
-
-# Общие данные
-content.append(Paragraph("Номер перевозки: 0006493170", style_normal))
-content.append(Paragraph("Номер поставки: 0032692534", style_normal))
-content.append(Paragraph("Распечатано: 04.10.21 17:23", style_normal))
-content.append(Paragraph("Последние изменения: 04.10.21 15:51", style_normal))
-content.append(Spacer(1, 12))  # Отступ
-
-# Резюме перевозки
-content.append(Paragraph("Резюме перевозки", style_title))
 summary_data = [
     ["Транспореон-ID", "730220899"],
     ["Отдел планирования", "Rockwool RU"],
@@ -52,9 +45,8 @@ summary_table.setStyle(TableStyle([
 ]))
 
 content.append(summary_table)
-content.append(Spacer(1, 12))  # Отступ
+content.append(Spacer(1, 12))
 
-# Информация о цене
 content.append(Paragraph("Цена", style_title))
 price_data = [
     ["Предложение", "38 700,00 RUB"],
@@ -77,14 +69,11 @@ price_table.setStyle(TableStyle([
 ]))
 
 content.append(price_table)
-content.append(Spacer(1, 12))  # Отступ
+content.append(Spacer(1, 12))
 
-# Комментарий к перевозке
 content.append(Paragraph("Комментарий к перевозке:", style_title))
 content.append(Paragraph(
     "Freight Instructions: ОБЯЗАТЕЛЬНО НАЛИЧИЕ УСТАНОВЛЕННОГО ПРИЛОЖЕНИЯ Transporeon У ВОДИТЕЛЯ.", style_normal))
 
-# Создание PDF
 doc.build(content)
-
 print(f"PDF создан: {pdf_file}")

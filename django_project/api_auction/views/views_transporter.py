@@ -1,4 +1,4 @@
-import requests
+from smsaero import SmsAero, SmsAeroException
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from rest_framework.views import APIView
@@ -49,10 +49,31 @@ class AddDriverData(APIView):
         return success_with_text(DriverProfileSerializer(driver).data)
 
 
+SMSAERO_EMAIL = 'kargonika@yandex.ru'
+SMSAERO_API_KEY = 'cEbdLCjCpjy_I43YSgwT9ARLWMogXwbk'
+
+
+def send_sms(phone: int, message: str) -> dict:
+    """
+    Sends an SMS message
+
+    Parameters:
+    phone (int): The phone number to which the SMS message will be sent.
+    message (str): The content of the SMS message to be sent.
+
+    Returns:
+    dict: A dictionary containing the response from the SmsAero API.
+    """
+    api = SmsAero(SMSAERO_EMAIL, SMSAERO_API_KEY)
+    return api.send_sms(phone, message)
+
+
 class A(APIView):
     permission_classes = ()
 
     def get(self, request):
-        r = requests.get(
-            "https://kargonika@yandex.ru:cEbdLCjCpjy_I43YSgwT9ARLWMogXwbk@gate.smsaero.ru/v2/auth")
-        return success_with_text(r.json())
+        try:
+            result = send_sms(77762747213, 'Hello, World!')
+            return success_with_text(result)
+        except SmsAeroException as e:
+            return error_with_text(f"An error occurred: {e}")
