@@ -1,3 +1,4 @@
+from smsaero import SmsAeroException
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.authtoken.models import Token
@@ -27,17 +28,13 @@ class RegisterDriverRequest(APIView):
         driver_register_request.generate_code()
         print(driver_register_request.confirmation_code)
 
-        response = send_sms(
-            phone_number, driver_register_request.confirmation_code)
-        if response.get('success', False) is False:
-            error_msg = response.get('message', None)
-            if error_msg is None:
-                return error_with_text('sms_service_error')
-            if "Validation error" in error_msg:
-                return error_with_text('phone_number_not_valid')
-            return error_with_text('sms_service_error: ' + error_msg)
-
-        return success_with_text('ok')
+        try:
+            result = send_sms(
+                phone_number, driver_register_request.confirmation_code)
+            return success_with_text(result)
+        except SmsAeroException as e:
+            print(e)
+            return error_with_text('sms_service_error: ' + str(e))
 
 
 class RegisterDriverConfirm(APIView):
@@ -134,17 +131,13 @@ class RequestPhoneNumberChangeView(APIView):
 
         phone_change_request.generate_code()
 
-        response = send_sms(
-            phone_number, phone_change_request.confirmation_code)
-        if response.get('success', False) is False:
-            error_msg = response.get('message', None)
-            if error_msg is None:
-                return error_with_text('sms_service_error')
-            if "Validation error" in error_msg:
-                return error_with_text('phone_number_not_valid')
-            return error_with_text('sms_service_error: ' + error_msg)
-
-        return success_with_text('ok')
+        try:
+            result = send_sms(
+                phone_number, phone_change_request.confirmation_code)
+            return success_with_text(result)
+        except SmsAeroException as e:
+            print(e)
+            return error_with_text('sms_service_error: ' + str(e))
 
 
 class ConfirmPhoneNumberChangeView(APIView):

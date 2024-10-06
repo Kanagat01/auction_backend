@@ -1,4 +1,4 @@
-import requests
+from smsaero import SmsAero
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -14,15 +14,19 @@ def success_with_text(text):
     return Response({'status': 'success', 'message': text}, status=status.HTTP_200_OK)
 
 
-def send_sms(phone_number: str, code: str):
-    phone_number = phone_number.replace("+", "")
-    try:
-        request_url = f'https://{SMS_LOGIN}:{SMS_PASSWORD}@gate.smsaero.ru/v2/sms/send/?number={phone_number}&sign=SMS Aero&text=Ваш код подтверждения в Cargonika: {code}'
-        response = requests.get(request_url, timeout=20)
-        return response.json()
-    except Exception as e:
-        print('Error:', str(e))
-    return {}
+def send_sms(phone: int, message: str) -> dict:
+    """
+    Sends an SMS message
+
+    Parameters:
+    phone (int): The phone number to which the SMS message will be sent.
+    message (str): The content of the SMS message to be sent.
+
+    Returns:
+    dict: A dictionary containing the response from the SmsAero API.
+    """
+    api = SmsAero(SMS_LOGIN, SMS_PASSWORD)
+    return api.send_sms(phone, message)
 
 
 def all_read_only_serializer(cls):
