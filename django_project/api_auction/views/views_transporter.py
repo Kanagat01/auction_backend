@@ -76,4 +76,4 @@ class A(APIView):
             result = send_sms(77762747213, 'Hello, World!')
             return success_with_text(result)
         except SmsAeroException as e:
-            return error_with_text(f"An error occurred: {e}")
+            return error_with_text(e)
