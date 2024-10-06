@@ -6,16 +6,26 @@ from rest_framework.request import Request
 from api_auction.serializers import *
 
 
+class PrintOrder(APIView):
+    permission_classes = [IsActiveUser]
+
+    def get(self, request):
+        pass
+
+
 class AddDocumentView(APIView):
     permission_classes = [IsActiveUser]
 
     def post(self, request: Request):
         user = request.user
-        user_type_check1 = user.user_type in [UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]
-        user_type_check2 = user.user_type in [UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]
+        user_type_check1 = user.user_type in [
+            UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]
+        user_type_check2 = user.user_type in [
+            UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]
 
         if user_type_check1:
-            customer_manager = user.customer_manager if hasattr(user, "customer_manager") else user.customer_company.managers.first()
+            customer_manager = user.customer_manager if hasattr(
+                user, "customer_manager") else user.customer_company.managers.first()
             serializer = CustomerGetOrderByIdSerializer(
                 data=request.data, customer_manager=customer_manager)
             if not serializer.is_valid():
@@ -24,7 +34,8 @@ class AddDocumentView(APIView):
             order = serializer.validated_data['order_id']
 
         elif user_type_check2:
-            transporter_manager = user.transporter_manager if hasattr(user, "transporter_manager") else user.transporter_company.get_manager()
+            transporter_manager = user.transporter_manager if hasattr(
+                user, "transporter_manager") else user.transporter_company.get_manager()
             serializer = TransporterGetOrderByIdSerializer(
                 data=request.data, transporter_manager=transporter_manager)
             if not serializer.is_valid():

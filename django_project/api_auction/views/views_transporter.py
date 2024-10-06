@@ -1,3 +1,4 @@
+import requests
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from rest_framework.views import APIView
@@ -46,3 +47,12 @@ class AddDriverData(APIView):
                 "order_id": order.pk,
             })
         return success_with_text(DriverProfileSerializer(driver).data)
+
+
+class A(APIView):
+    permission_classes = ()
+
+    def get(self, request):
+        r = requests.get(
+            "https://kargonika@yandex.ru:cEbdLCjCpjy_I43YSgwT9ARLWMogXwbk@gate.smsaero.ru/v2/auth")
+        return success_with_text(r.json())
