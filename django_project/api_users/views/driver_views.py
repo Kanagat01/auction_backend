@@ -29,6 +29,7 @@ class RegisterDriverRequest(APIView):
         print(driver_register_request.confirmation_code)
 
         try:
+            print(phone_number, type(phone_number))
             result = send_sms(
                 phone_number, driver_register_request.confirmation_code)
             return success_with_text(result)
