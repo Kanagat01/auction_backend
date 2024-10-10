@@ -20,6 +20,12 @@ class SettingsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ApplicationForRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationForRegistration
+        fields = '__all__'
+
+
 class UserModelSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='id', read_only=True)
 

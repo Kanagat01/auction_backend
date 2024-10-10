@@ -4,6 +4,8 @@ from django.http import HttpResponseRedirect
 from django.contrib import admin
 from api_users.models import *
 
+admin.site.register(ApplicationForRegistration)
+
 
 @admin.register(Settings)
 class SettingsAdmin(admin.ModelAdmin):
@@ -31,7 +33,8 @@ class CompanyAdmin(admin.ModelAdmin):
 class TransporterCompanyForm(forms.ModelForm):
     class Meta:
         model = TransporterCompany
-        fields = ['user', 'company_name', 'details', 'balance', 'subscription', 'subscription_paid']
+        fields = ['user', 'company_name', 'details',
+                  'balance', 'subscription', 'subscription_paid']
 
 
 @admin.register(TransporterCompany)
@@ -45,7 +48,8 @@ class CustomerCompanyForm(forms.ModelForm):
 
     class Meta:
         model = CustomerCompany
-        fields = ['user', 'company_name', 'details', 'allowed_transporter_companies', 'balance', 'subscription', 'subscription_paid']
+        fields = ['user', 'company_name', 'details', 'allowed_transporter_companies',
+                  'balance', 'subscription', 'subscription_paid']
 
 
 @admin.register(CustomerCompany)
@@ -55,7 +59,7 @@ class CustomerCompanyAdmin(CompanyAdmin):
 
 @admin.register(UserModel)
 class UserModelAdmin(admin.ModelAdmin):
-    list_display = ['id', 'full_name', 'username','user_type']
+    list_display = ['id', 'full_name', 'username', 'user_type']
     search_fields = ['id', 'full_name', 'username']
     search_help_text = 'Ищите по: ID, полному имени, имени пользователя (email или номер телефона)'
     list_filter = ['user_type']

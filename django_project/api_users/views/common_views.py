@@ -23,6 +23,17 @@ class GetSettings(APIView):
         return success_with_text(SettingsSerializer(settings).data if settings else {})
 
 
+class CreateApplicationForRegistration(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        serializer = ApplicationForRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return success_with_text("ok")
+        return error_with_text(serializer.errors)
+
+
 class GetUser(APIView):
     """
     Get user info
