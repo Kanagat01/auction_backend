@@ -3,9 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from api_users.models import *
-from api_users.serializers import *
 from api_users.permissions import IsCustomerCompanyAccount, IsTransporterCompanyAccount
+from api_users.serializers import *
+from api_users.models import *
 
 
 class ValidateToken(APIView):
@@ -41,9 +41,6 @@ class GetUser(APIView):
 
     def get(self, request: Request):
         instance = request.user
-        settings = Settings.objects.first()
-        settings_data = SettingsSerializer(settings).data if settings else {}
-
         profile = {}
         if instance.user_type == UserTypes.CUSTOMER_COMPANY:
             profile = CustomerCompanySerializer(
@@ -62,11 +59,7 @@ class GetUser(APIView):
         else:
             return error_with_text('user_not_found')
 
-        response_data = {
-            "profile": profile,
-            "settings": settings_data
-        }
-        return success_with_text(response_data)
+        return success_with_text(profile)
 
 
 class EditUser(APIView):
