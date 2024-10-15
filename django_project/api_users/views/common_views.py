@@ -23,6 +23,21 @@ class GetSettings(APIView):
         return success_with_text(SettingsSerializer(settings).data if settings else {})
 
 
+class GetLandingData(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        settings = Settings.objects.first()
+        response = {}
+        response["settings"] = SettingsSerializer(
+            settings).data if settings else {}
+
+        subscriptions = CustomerSubscription.objects.all()
+        response["subscriptions"] = CustomerSubscriptionSerializer(
+            subscriptions, many=True).data
+        return success_with_text(response)
+
+
 class CreateApplicationForRegistration(APIView):
     permission_classes = []
 

@@ -12,6 +12,7 @@ auth = [
 
 common = [
     path('get_settings/', GetSettings.as_view()),
+    path('get_landing_data/', GetLandingData.as_view()),
     path('create_application/', CreateApplicationForRegistration.as_view()),
     path('validate_token/', ValidateToken.as_view()),
     path('get_user/', GetUser.as_view()),
