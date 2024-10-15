@@ -8,6 +8,7 @@ class Settings(models.Model):
                               verbose_name='Почта поддержки')
     phone_number = models.CharField(
         max_length=100, validators=[PhoneNumberValidator()], verbose_name="Телефон поддержки")
+    address = models.CharField(max_length=5000, verbose_name='Адрес')
 
     def clean(self):
         if Settings.objects.exists() and not self.pk:
