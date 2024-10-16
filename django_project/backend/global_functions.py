@@ -26,7 +26,7 @@ def send_sms(phone: int, message: str) -> dict:
     dict: A dictionary containing the response from the SmsAero API.
     """
     api = SmsAero(SMS_LOGIN, SMS_PASSWORD)
-    return api.send_sms(phone, message, sign="Cargonika")
+    return api.send_sms(phone, message)
 
 
 def all_read_only_serializer(cls):
