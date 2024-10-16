@@ -10,6 +10,7 @@ from backend.global_functions import send_sms, success_with_text, error_with_tex
 
 
 class RegisterDriverRequest(APIView):
+    '''Ендпоинт для регистрации или сброса пароля водителя'''
     permission_classes = ()
 
     def post(self, request: Request):
@@ -30,7 +31,7 @@ class RegisterDriverRequest(APIView):
 
         try:
             result = send_sms(
-                int(phone_number), driver_register_request.confirmation_code)
+                int(phone_number), f"Код для регистрации или сброса пароля: {driver_register_request.confirmation_code}")
             return success_with_text(result)
         except SmsAeroException as e:
             print(e)
@@ -133,7 +134,7 @@ class RequestPhoneNumberChangeView(APIView):
 
         try:
             result = send_sms(
-                int(phone_number), phone_change_request.confirmation_code)
+                int(phone_number), f"Код для изменения пароля: {phone_change_request.confirmation_code}")
             return success_with_text(result)
         except SmsAeroException as e:
             print(e)

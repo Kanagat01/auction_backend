@@ -17,5 +17,5 @@ jobs:
           script: |
             cd ${{ secrets.PROJECT_FOLDER }};
             git pull;
-            docker compose up -d --build django_project django-qcluster;
+            docker compose up -d --build django_project django-qcluster nginx;
       - run: echo "💡 The server code has been updated"
