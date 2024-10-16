@@ -15,7 +15,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
           script: |
-            cd ${{ secrets.PROJECT_FOLDER }};
+            cd auction_backend;
             git pull;
             docker compose up -d --build django_project django-qcluster nginx;
       - run: echo "💡 The server code has been updated"
