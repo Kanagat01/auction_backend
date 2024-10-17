@@ -10,7 +10,8 @@ class DriverRegisterRequest(models.Model):
     created_at = models.DateTimeField(auto_now=True)
 
     def generate_code(self):
-        self.confirmation_code = ''.join(random.choices(string.digits, k=4))
+        self.confirmation_code = '1234'
+        # self.confirmation_code = ''.join(random.choices(string.digits, k=4))
         self.save()
 
 
@@ -21,7 +22,8 @@ class PhoneNumberChangeRequest(models.Model):
     created_at = models.DateTimeField(auto_now=True)
 
     def generate_code(self):
-        self.confirmation_code = ''.join(random.choices(string.digits, k=4))
+        self.confirmation_code = '1234'
+        # self.confirmation_code = ''.join(random.choices(string.digits, k=4))
         self.save()
 
 
