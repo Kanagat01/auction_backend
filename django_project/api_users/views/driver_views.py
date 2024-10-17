@@ -14,6 +14,7 @@ class RegisterDriverRequest(APIView):
     permission_classes = ()
 
     def post(self, request: Request):
+        print(request.data)
         serializer = RegisterDriverRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
@@ -42,6 +43,7 @@ class RegisterDriverConfirm(APIView):
     permission_classes = ()
 
     def post(self, request: Request):
+        print(request.data)
         serializer = RegisterDriverConfirmSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
