@@ -55,7 +55,6 @@ class RegisterDriverConfirm(APIView):
         try:
             driver = DriverProfile.objects.get(phone_number=phone_number)
             user = driver.user
-            Token.objects.filter(user=user).delete()
             driver_exist = True
 
         except DriverProfile.DoesNotExist:
@@ -70,6 +69,7 @@ class RegisterDriverConfirm(APIView):
             driver_exist = False
 
         driver_register_request.delete()
+        Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
         return success_with_text({'token': token.key, "driver_exist": driver_exist})
 
