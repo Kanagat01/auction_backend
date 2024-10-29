@@ -80,12 +80,12 @@ class Login(APIView):
         user: UserModel = authenticate(username=username, password=password)
         if user is None:
             return error_with_text('invalid_credentials')
+        if user.user_type == UserTypes.DRIVER:
+            return error_with_text('nice try)')
 
         # Deleting previous token
         Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
-        if user.user_type == UserTypes.DRIVER:
-            return success_with_text({'token': token.key, 'driver_exist': hasattr(user, 'driver_profile')})
         return success_with_text({'token': token.key})
 
 

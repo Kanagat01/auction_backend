@@ -64,7 +64,7 @@ class AddDriverDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DriverProfile
-        exclude = ['birth_date', 'user']
+        exclude = ['user']
 
     def validate_full_name(self, value):
         if value == "":

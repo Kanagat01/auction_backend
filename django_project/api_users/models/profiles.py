@@ -16,8 +16,6 @@ class PhoneNumberValidator(RegexValidator):
 class DriverProfile(models.Model):
     user = models.OneToOneField(
         UserModel, on_delete=models.CASCADE, related_name='driver_profile')
-    birth_date = models.DateField(
-        null=True, blank=True, verbose_name='Дата рождения')
     passport_number = models.CharField(
         max_length=20, verbose_name='Номер паспорта')
     phone_number = models.CharField(max_length=17, unique=True,
@@ -59,7 +57,7 @@ class BaseCompany(models.Model):
             self.balance -= self.subscription.price
             self.subscription_paid = True
         super().save(*args, **kwargs)
-        
+
         channel_layer = get_channel_layer()
         user_ids = [self.user.pk, *[m.user.id for m in self.managers.all()]]
         for user_id in user_ids:

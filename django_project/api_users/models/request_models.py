@@ -4,7 +4,7 @@ from django.db import models
 from .profiles import DriverProfile, PhoneNumberValidator
 
 
-class DriverRegisterRequest(models.Model):
+class DriverAuthRequest(models.Model):
     phone_number = models.CharField(unique=True, max_length=17)
     confirmation_code = models.CharField(max_length=4)
     created_at = models.DateTimeField(auto_now=True)

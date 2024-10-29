@@ -1,15 +1,15 @@
 from datetime import datetime
 from rest_framework import serializers
-from api_users.models import PhoneNumberChangeRequest, PhoneNumberValidator, DriverProfile, DriverRegisterRequest
+from api_users.models import PhoneNumberChangeRequest, PhoneNumberValidator, DriverProfile, DriverAuthRequest
 from .authentication_serializers import PasswordResetConfirmSerializer
 
 
-class RegisterDriverRequestSerializer(serializers.Serializer):
+class DriverAuthRequestSerializer(serializers.Serializer):
     phone_number = serializers.CharField(
         max_length=17, validators=[PhoneNumberValidator()])
 
 
-class RegisterDriverConfirmSerializer(serializers.Serializer):
+class DriverAuthConfirmSerializer(serializers.Serializer):
     phone_number = serializers.CharField(
         max_length=17, validators=[PhoneNumberValidator()])
     confirmation_code = serializers.CharField(max_length=4)
@@ -22,7 +22,7 @@ class RegisterDriverConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError("invalid_confirmation_code")
 
         try:
-            driver_register_request = DriverRegisterRequest.objects.get(
+            driver_register_request = DriverAuthRequest.objects.get(
                 phone_number=phone_number)
             if driver_register_request.confirmation_code != confirmation_code:
                 raise serializers.ValidationError("wrong_code")
@@ -30,30 +30,12 @@ class RegisterDriverConfirmSerializer(serializers.Serializer):
             attrs['driver_register_request'] = driver_register_request
             return attrs
 
-        except DriverRegisterRequest.DoesNotExist:
+        except DriverAuthRequest.DoesNotExist:
             raise serializers.ValidationError(
                 "driver_register_request_does_not_exist")
 
 
-class SetDriverPasswordAndBirthDate(PasswordResetConfirmSerializer):
-    birth_date = serializers.DateField(required=False)
-
-    def to_internal_value(self, data):
-        try:
-            return super().to_internal_value(data)
-        except serializers.ValidationError:
-            pass
-
-        try:
-            data['birth_date'] = datetime.strptime(
-                data['birth_date'], '%d.%m.%Y').date()
-        except (ValueError, TypeError):
-            raise serializers.ValidationError(
-                {'birth_date': 'Invalid date format. Try: YYYY-MM-DD'})
-        return super().to_internal_value(data)
-
-
-class SetDriverProfileDataSerializer(SetDriverPasswordAndBirthDate, serializers.ModelSerializer):
+class SetDriverProfileDataSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(
         max_length=300,
         error_messages={

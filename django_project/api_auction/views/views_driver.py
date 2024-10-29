@@ -8,15 +8,15 @@ from api_users.permissions.driver_permissions import IsDriverAccount
 from backend.global_functions import success_with_text, error_with_text
 
 
-class GetOrder(APIView):
+class GetOrders(APIView):
     permission_classes = [IsDriverAccount]
 
     def get(self, request: Request):
         driver: DriverProfile = request.user.driver_profile
-        order = driver.orders.filter(status=OrderStatus.being_executed).first()
-        if not order:
+        orders = driver.orders.filter(status=OrderStatus.being_executed)
+        if not orders.exists():
             return error_with_text("you don't have being executed orders")
-        return success_with_text(OrderSerilizerForDriver(order, driver=driver).data)
+        return success_with_text(OrderSerilizerForDriver(orders, driver=driver, many=True).data)
 
 
 class MakeOrderStageCompleted(APIView):

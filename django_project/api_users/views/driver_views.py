@@ -5,30 +5,30 @@ from rest_framework.authtoken.models import Token
 from api_users.permissions import IsDriverAccount
 from api_users.serializers import DriverProfileSerializer
 from api_users.serializers.driver_serializers import *
-from api_users.models import UserModel, UserTypes, PhoneNumberChangeRequest, DriverProfile, DriverRegisterRequest
+from api_users.models import UserModel, UserTypes, PhoneNumberChangeRequest, DriverProfile, DriverAuthRequest
 from backend.global_functions import send_sms, success_with_text, error_with_text
 
 
-class RegisterDriverRequest(APIView):
-    '''Ендпоинт для регистрации или сброса пароля водителя'''
+class DriverAuthRequestView(APIView):
+    '''Ендпоинт для регистрации водителя'''
     permission_classes = ()
 
     def post(self, request: Request):
-        print(request.data)
-        serializer = RegisterDriverRequestSerializer(data=request.data)
+        # print(request.data)
+        serializer = DriverAuthRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
         phone_number = serializer.validated_data['phone_number']
         try:
-            driver_register_request = DriverRegisterRequest.objects.get(
+            driver_register_request = DriverAuthRequest.objects.get(
                 phone_number=phone_number)
-        except DriverRegisterRequest.DoesNotExist:
-            driver_register_request = DriverRegisterRequest.objects.create(
+        except DriverAuthRequest.DoesNotExist:
+            driver_register_request = DriverAuthRequest.objects.create(
                 phone_number=phone_number)
 
         driver_register_request.generate_code()
-        print(driver_register_request.confirmation_code)
+        # print(driver_register_request.confirmation_code)
 
         try:
             result = send_sms(
@@ -39,16 +39,17 @@ class RegisterDriverRequest(APIView):
             return error_with_text('sms_service_error: ' + str(e))
 
 
-class RegisterDriverConfirm(APIView):
+class DriverAuthConfirm(APIView):
+    '''Ендпоинт для подтверждения регистрации водителя'''
     permission_classes = ()
 
     def post(self, request: Request):
-        print(request.data)
-        serializer = RegisterDriverConfirmSerializer(data=request.data)
+        # print(request.data)
+        serializer = DriverAuthConfirmSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
-        driver_register_request: DriverRegisterRequest = serializer.validated_data[
+        driver_register_request: DriverAuthRequest = serializer.validated_data[
             'driver_register_request']
 
         phone_number = driver_register_request.phone_number
@@ -75,46 +76,29 @@ class RegisterDriverConfirm(APIView):
 
 
 class SetDriverProfileData(APIView):
+    '''Ендпоинт для изменения данных водителя'''
     permission_classes = [IsDriverAccount]
 
     def post(self, request: Request):
         user: UserModel = request.user
-        if hasattr(user, 'driver_profile'):
-            serializer = SetDriverPasswordAndBirthDate(data=request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
-                return error_with_text(serializer.errors)
+        serializer = SetDriverProfileDataSerializer(
+            data={"phone_number": user.username, **request.data}
+        )
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
 
-            birth_date = serializer.validated_data["birth_date"]
-            if birth_date:
-                user.driver_profile.birth_date = birth_date
-                user.driver_profile.save()
+        full_name = serializer.validated_data.pop("full_name")
 
-            user.set_password(
-                serializer.validated_data["new_password"])
-            user.save()
-        else:
-            serializer = SetDriverProfileDataSerializer(
-                data={"phone_number": user.username, **request.data}
-            )
-            if not serializer.is_valid():
-                return error_with_text(serializer.errors)
+        DriverProfile.objects.create(
+            user=user, **serializer.validated_data)
 
-            serializer.validated_data.pop("confirm_password")
-            password = serializer.validated_data.pop("new_password")
-            full_name = serializer.validated_data.pop("full_name")
-
-            DriverProfile.objects.create(
-                user=user, **serializer.validated_data)
-
-            user.full_name = full_name
-            user.set_password(password)
-            user.save()
-
+        user.full_name = full_name
+        user.save()
         return success_with_text(DriverProfileSerializer(user.driver_profile).data)
 
 
 class RequestPhoneNumberChangeView(APIView):
+    '''Ендпоинт для изменения номера телефона водителя'''
     permission_classes = [IsDriverAccount]
 
     def post(self, request: Request):
@@ -144,6 +128,7 @@ class RequestPhoneNumberChangeView(APIView):
 
 
 class ConfirmPhoneNumberChangeView(APIView):
+    '''Ендпоинт для подтверждения изменения телефона водителя'''
     permission_classes = [IsDriverAccount]
 
     def post(self, request: Request):

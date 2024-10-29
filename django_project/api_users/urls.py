@@ -34,8 +34,8 @@ customer = [
 transporter = []
 
 driver = [
-    path('register_request/', RegisterDriverRequest.as_view()),
-    path('register_confirm/', RegisterDriverConfirm.as_view()),
+    path('auth_request/', DriverAuthRequestView.as_view()),
+    path('auth_confirm/', DriverAuthConfirm.as_view()),
     path('set_profile_data/', SetDriverProfileData.as_view()),
     path('request_phone_change/', RequestPhoneNumberChangeView.as_view()),
     path('confirm_phone_change/', ConfirmPhoneNumberChangeView.as_view()),
