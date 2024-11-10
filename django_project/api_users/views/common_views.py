@@ -201,12 +201,19 @@ class ChangeSubscription(APIView):
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
-        subscription = serializer.validated_data["subscription_id"]
-        if user.user_type == UserTypes.CUSTOMER_COMPANY:
-            user.customer_company.subscription = subscription
-            user.customer_company.save()
-            return success_with_text(CustomerCompanySerializer(user.customer_company).data)
-        else:
-            user.transporter_company.subscription = subscription
-            user.transporter_company.save()
-            return success_with_text(TransporterCompanySerializer(user.transporter_company).data)
+        is_customer = user.user_type == UserTypes.CUSTOMER_COMPANY
+        subscription: Subscription = serializer.validated_data["subscription_id"]
+        company: BaseCompany = user.customer_company if is_customer else user.transporter_company
+        if company.subscription_paid:
+            price_diff = subscription.price - company.subscription.price
+            if price_diff > 0:
+                if company.balance >= price_diff:
+                    company.balance -= price_diff
+                else:
+                    return error_with_text(f"insufficient_funds:{price_diff - company.balance}")
+        company.subscription = subscription
+        company.save()
+
+        if is_customer:
+            return success_with_text(CustomerCompanySerializer(company).data)
+        return success_with_text(TransporterCompanySerializer(company).data)
