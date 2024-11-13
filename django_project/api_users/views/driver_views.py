@@ -10,7 +10,7 @@ from backend.global_functions import send_sms, success_with_text, error_with_tex
 
 
 class DriverAuthRequestView(APIView):
-    '''Ендпоинт для регистрации водителя'''
+    '''Ендпоинт для авторизации водителя'''
     permission_classes = ()
 
     def post(self, request: Request):
@@ -40,7 +40,7 @@ class DriverAuthRequestView(APIView):
 
 
 class DriverAuthConfirm(APIView):
-    '''Ендпоинт для подтверждения регистрации водителя'''
+    '''Ендпоинт для подтверждения авторизации водителя'''
     permission_classes = ()
 
     def post(self, request: Request):
@@ -89,8 +89,13 @@ class SetDriverProfileData(APIView):
 
         full_name = serializer.validated_data.pop("full_name")
 
-        DriverProfile.objects.create(
-            user=user, **serializer.validated_data)
+        if not hasattr(user, 'driver_profile'):
+            DriverProfile.objects.create(
+                user=user, **serializer.validated_data)
+        else:
+            for key, value in serializer.validated_data.items():
+                setattr(user.driver_profile, key, value)
+            user.driver_profile.save()
 
         user.full_name = full_name
         user.save()
