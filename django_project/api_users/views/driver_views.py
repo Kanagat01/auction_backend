@@ -81,24 +81,27 @@ class SetDriverProfileData(APIView):
 
     def post(self, request: Request):
         user: UserModel = request.user
-        serializer = SetDriverProfileDataSerializer(
-            data={"phone_number": user.username, **request.data}
-        )
-        if not serializer.is_valid():
-            return error_with_text(serializer.errors)
-
-        full_name = serializer.validated_data.pop("full_name")
+        full_name = request.data.get("full_name")
 
         if not hasattr(user, 'driver_profile'):
+            serializer = SetDriverProfileDataSerializer(
+                user=user, data=request.data)
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+
             DriverProfile.objects.create(
                 user=user, **serializer.validated_data)
         else:
-            for key, value in serializer.validated_data.items():
-                setattr(user.driver_profile, key, value)
-            user.driver_profile.save()
+            serializer = SetDriverProfileDataSerializer(
+                instance=user.driver_profile, user=user, data=request.data, partial=True
+            )
+            if not serializer.is_valid():
+                return error_with_text(serializer.errors)
+            serializer.save()
 
-        user.full_name = full_name
-        user.save()
+        if full_name:
+            user.full_name = full_name
+            user.save()
         return success_with_text(DriverProfileSerializer(user.driver_profile).data)
 
 

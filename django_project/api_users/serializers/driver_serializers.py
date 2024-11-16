@@ -1,7 +1,5 @@
-from datetime import datetime
 from rest_framework import serializers
-from api_users.models import PhoneNumberChangeRequest, PhoneNumberValidator, DriverProfile, DriverAuthRequest
-from .authentication_serializers import PasswordResetConfirmSerializer
+from api_users.models import PhoneNumberChangeRequest, PhoneNumberValidator, UserModel, DriverProfile, DriverAuthRequest
 
 
 class DriverAuthRequestSerializer(serializers.Serializer):
@@ -53,10 +51,14 @@ class SetDriverProfileDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DriverProfile
-        exclude = ['user']
+        exclude = ['user', 'phone_number']
+
+    def __init__(self, user: UserModel, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
 
     def validate_machine_number(self, value):
-        if DriverProfile.objects.filter(machine_number=value).exists():
+        if DriverProfile.objects.exclude(user=self.user).filter(machine_number=value).exists():
             raise serializers.ValidationError("must_be_unique")
         return value
 
