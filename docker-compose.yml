@@ -66,8 +66,8 @@ services:
     volumes:
       - static_volume:/home/app/staticfiles
       - media_volume:/home/app/mediafiles
-      - /etc/ssl/cargonika.crt:/certificate/cargonika.crt:ro
-      - /etc/ssl/cargonika.key:/certificate/cargonika.key:ro
+      - /etc/letsencrypt/live/cargonika.ru/fullchain.pem:/certificate/cargonika_cert.pem:ro
+      - /etc/letsencrypt/live/cargonika.ru/privkey.pem:/certificate/cargonika_key.pem:ro
       - /etc/letsencrypt/live/backend.cargonika.ru/fullchain.pem:/certificate/backend_cargonika_cert.pem:ro
       - /etc/letsencrypt/live/backend.cargonika.ru/privkey.pem:/certificate/backend_cargonika_key.pem:ro
 
