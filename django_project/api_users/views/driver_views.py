@@ -141,8 +141,9 @@ class ConfirmPhoneNumberChangeView(APIView):
     permission_classes = [IsDriverAccount]
 
     def post(self, request: Request):
+        user = request.user
         serializer = ConfirmPhoneNumberSerializer(
-            data=request.data, driver=request.user.driver_profile)
+            data=request.data, driver=user.driver_profile)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
@@ -152,6 +153,10 @@ class ConfirmPhoneNumberChangeView(APIView):
         driver: DriverProfile = phone_change_request.driver
         driver.phone_number = phone_change_request.new_phone_number
         driver.save()
+
+        user.username = phone_change_request.new_phone_number
+        user.save()
+
         phone_change_request.delete()
 
         Token.objects.filter(user=driver.user).delete()
