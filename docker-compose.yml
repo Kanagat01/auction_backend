@@ -3,6 +3,7 @@ version: "3.8"
 services:
   db:
     image: postgres:15
+    init: true
     networks:
       - back
     volumes:
@@ -12,6 +13,7 @@ services:
 
   redis:
     image: redis
+    init: true
     networks:
       - back
     env_file:
@@ -52,14 +54,9 @@ services:
     depends_on:
       - db
 
-  smtp:
-    build: ./smtp_server
-    network_mode: host
-    env_file:
-      - .env
-
   nginx:
     build: ./nginx
+    init: true
     networks:
       - front
       - back

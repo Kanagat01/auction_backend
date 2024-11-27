@@ -34,13 +34,6 @@ class DriverAuthConfirmSerializer(serializers.Serializer):
 
 
 class SetDriverProfileDataSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(
-        max_length=300,
-        error_messages={
-            'required': 'required',
-            'max_length': 'max_length is 300 symbols'
-        }
-    )
     machine_number = serializers.CharField(
         max_length=20,
         error_messages={
