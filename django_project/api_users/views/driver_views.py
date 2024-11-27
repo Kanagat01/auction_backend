@@ -31,9 +31,9 @@ class DriverAuthRequestView(APIView):
         # print(driver_register_request.confirmation_code)
 
         try:
-            result = send_sms(
-                int(phone_number), f"Ваш код подтверждения в Cargonika: {driver_register_request.confirmation_code}")
-            return success_with_text(result)
+            # send_sms(
+            #     int(phone_number), f"Ваш код подтверждения в Cargonika: {driver_register_request.confirmation_code}")
+            return success_with_text("ok")
         except SmsAeroException as e:
             print(e)
             return error_with_text('sms_service_error: ' + str(e))
@@ -127,9 +127,10 @@ class RequestPhoneNumberChangeView(APIView):
         phone_change_request.generate_code()
 
         try:
-            result = send_sms(
+            print("phone_number ", phone_number)
+            send_sms(
                 int(phone_number), f"Ваш код подтверждения в Cargonika: {phone_change_request.confirmation_code}")
-            return success_with_text(result)
+            return success_with_text("ok")
         except SmsAeroException as e:
             print(e)
             return error_with_text('sms_service_error: ' + str(e))
