@@ -90,7 +90,7 @@ class SetDriverProfileData(APIView):
                 return error_with_text(serializer.errors)
 
             DriverProfile.objects.create(
-                user=user, **serializer.validated_data)
+                user=user, phone_number=user.username, **serializer.validated_data)
         else:
             serializer = SetDriverProfileDataSerializer(
                 instance=user.driver_profile, user=user, data=request.data, partial=True
