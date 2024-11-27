@@ -1,4 +1,4 @@
-from smsaero import SmsAero
+from smsaero import SmsAero, SmsAeroException, phonenumbers
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -25,6 +25,9 @@ def send_sms(phone: int, message: str) -> dict:
     Returns:
     dict: A dictionary containing the response from the SmsAero API.
     """
+    if not phonenumbers.is_valid_number(phone):
+        raise SmsAeroException("Number must be a valid phone number")
+
     api = SmsAero(SMS_LOGIN, SMS_PASSWORD)
     return api.send_sms(phone, message)
 

@@ -128,8 +128,8 @@ class RequestPhoneNumberChangeView(APIView):
 
         try:
             print("phone_number ", phone_number)
-            send_sms(
-                int(phone_number), f"Ваш код подтверждения в Cargonika: {phone_change_request.confirmation_code}")
+            # send_sms(
+            #     int(phone_number), f"Ваш код подтверждения в Cargonika: {phone_change_request.confirmation_code}")
             return success_with_text("ok")
         except SmsAeroException as e:
             print(e)
