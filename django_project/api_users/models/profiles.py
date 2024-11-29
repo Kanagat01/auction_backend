@@ -8,8 +8,8 @@ from api_users.models.user import UserModel
 
 
 class PhoneNumberValidator(RegexValidator):
-    '''Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed'''
-    regex = r'^\+?1?\d{9,15}$'
+    '''Phone number must be entered in the format: '+999999999'. Up to 11 digits allowed'''
+    regex = r'^\+?1?\d{9,11}$'
     message = "invalid_phone_number"
 
 

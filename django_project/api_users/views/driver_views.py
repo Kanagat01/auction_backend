@@ -81,7 +81,7 @@ class SetDriverProfileData(APIView):
 
     def post(self, request: Request):
         user: UserModel = request.user
-        full_name = request.data.pop("full_name")
+        full_name = request.data.get("full_name")
 
         if not hasattr(user, 'driver_profile'):
             serializer = SetDriverProfileDataSerializer(
