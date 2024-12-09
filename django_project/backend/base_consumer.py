@@ -60,13 +60,20 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
                 await self.send_json({"error": "incorrect_status"})
 
     async def create_geopoint(self, data):
+        order_id: str = data.get("order_id")
+        if not order_id.isdigit():
+            await self.send_json({"error": "order_id type should be an integer"})
+            return
+
         order = await database_sync_to_async(
-            lambda: self.user.driver_profile.orders.filter(
-                status=OrderStatus.being_executed
-            ).first()
-        )()
-        if not order:
-            await self.send_json({"error": "you don't have being executed orders"})
+            OrderModel.objects.get
+        )(id=order_id)
+        if order.driver != self.user.driver_profile:
+            await self.send_json({"error": "order isn't belong to you"})
+            return
+
+        if order.status != OrderStatus.being_executed:
+            await self.send_json({"error": "order status isn't being executed"})
             return
 
         try:
@@ -74,10 +81,10 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
         except OrderModel.tracking.RelatedObjectDoesNotExist:
             tracking = await database_sync_to_async(OrderTracking.objects.create)(order=order)
             tracking_id = tracking.id
-            
+
         serializer = OrderTrackingGeoPointSerializer(
             data={'tracking': tracking_id, **data})
-        
+
         is_valid = await database_sync_to_async(serializer.is_valid)()
         if is_valid:
             await database_sync_to_async(serializer.save)()
