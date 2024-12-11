@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from django.db.models import Q
 from rest_framework import serializers
 from api_auction.models import *
@@ -64,6 +66,33 @@ class OrderStageCoupleSerializer(serializers.ModelSerializer):
         model = OrderStageCouple
         read_only_fields = ['created_at']
         exclude = ['order']
+
+    def __init__(self, as_timestamp=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.as_timestamp = as_timestamp
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if self.as_timestamp:
+            load_stage = representation["load_stage"]
+            unload_stage = representation["unload_stage"]
+            for stage in [load_stage, unload_stage]:
+                date = stage.pop("date", None)
+                time_start = stage.pop("time_start", None)
+                time_end = stage.pop("time_end", None)
+
+                stage["datetime_start"] = self._to_timestamp(date, time_start)
+                stage["datetime_end"] = self._to_timestamp(date, time_end)
+
+        return representation
+
+    def _to_timestamp(self, date_str, time_str):
+        if date_str and time_str:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            time_obj = datetime.strptime(time_str, '%H:%M:%S').time()
+            combined_datetime = datetime.combine(date_obj, time_obj)
+            return int(combined_datetime.timestamp())
+        return None
 
     def create(self, validated_data):
         load_data = OrderLoadStageSerializer(
@@ -229,7 +258,8 @@ class OrderSerializerForTransporter(BaseOrderSerializer):
 
 class OrderSerilizerForDriver(serializers.ModelSerializer):
     documents = serializers.SerializerMethodField()
-    stages = OrderStageCoupleSerializer(many=True, read_only=True)
+    stages = OrderStageCoupleSerializer(
+        as_timestamp=True, many=True, read_only=True)
 
     def __init__(self, *args, driver: DriverProfile, **kwargs):
         super().__init__(*args, **kwargs)

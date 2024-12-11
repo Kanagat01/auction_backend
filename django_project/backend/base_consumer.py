@@ -44,7 +44,7 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
     async def receive_json(self, data):
         '''
         Чтобы изменить статус {action: 'set_status', status: :OrderStatus}
-        Чтобы создать геоточку {latitude: double, longitude: double}
+        Чтобы создать геоточку {order_id: int, latitude: double, longitude: double}
         '''
         if self.is_driver:
             await self.create_geopoint(data)
