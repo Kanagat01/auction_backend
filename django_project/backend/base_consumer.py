@@ -60,15 +60,17 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
                 await self.send_json({"error": "incorrect_status"})
 
     async def create_geopoint(self, data):
-        order_id: int = data.get("order_id")
-        if isinstance(order_id, int):
-            await self.send_json({"error": "order_id type should be an integer"})
+        try:
+            order_id = int(data.get("order_id"))
+        except Exception as ex:
+            await self.send_json({"error": ex})
             return
 
         order = await database_sync_to_async(
             OrderModel.objects.get
         )(id=order_id)
-        if order.driver != self.user.driver_profile:
+        have_access = await database_sync_to_async(lambda: order.driver != self.user.driver_profile)()
+        if have_access:
             await self.send_json({"error": "order isn't belong to you"})
             return
 
