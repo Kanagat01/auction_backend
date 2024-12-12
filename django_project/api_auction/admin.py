@@ -35,14 +35,12 @@ class OrderLoadStageInline(admin.StackedInline):
     model = OrderLoadStage
     extra = 0
     can_delete = False
-    readonly_fields = ('date', 'address')
 
 
 class OrderUnloadStageInline(admin.StackedInline):
     model = OrderUnloadStage
     extra = 0
     can_delete = False
-    readonly_fields = ('date', 'address')
 
 
 @admin.register(OrderStageCouple)

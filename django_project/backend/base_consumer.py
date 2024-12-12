@@ -60,8 +60,8 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
                 await self.send_json({"error": "incorrect_status"})
 
     async def create_geopoint(self, data):
-        order_id: str = data.get("order_id")
-        if not order_id.isdigit():
+        order_id: int = data.get("order_id")
+        if isinstance(order_id, int):
             await self.send_json({"error": "order_id type should be an integer"})
             return
 
