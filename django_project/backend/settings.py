@@ -199,6 +199,11 @@ if os.environ.get('RUNNING_FROM_DOCKER', False):
                 'level': 'INFO' if DEBUG else 'ERROR',
                 'propagate': True,
             },
+            'websocket': {
+                'handlers': ['file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
         },
     }
 

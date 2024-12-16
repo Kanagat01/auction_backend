@@ -1,10 +1,13 @@
 import json
+import logging
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from api_auction.models import *
 from api_auction.serializers import *
 from api_notification.models import *
 from api_notification.serializers import *
+
+logger = logging.getLogger('websocket')
 
 
 class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
@@ -22,17 +25,21 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             await self.accept()
+            logger.info(f"{self.user} connected")
             await self.send_json({"message": "connected"})
         else:
             await self.close()
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated and self.group_name:
+            logger.info(f"{self.user} disconnected")
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def send_json(self, data):
         """Send a JSON serialized message."""
-        await self.send(text_data=json.dumps(data))
+        text_data = json.dumps(data)
+        logger.info(f"Send json to {self.user}: {text_data}")
+        await self.send(text_data=text_data)
 
     async def receive(self, text_data):
         try:
@@ -46,6 +53,7 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
         Чтобы изменить статус {action: 'set_status', status: :OrderStatus}
         Чтобы создать геоточку {order_id: int, latitude: double, longitude: double}
         '''
+        logger.info(f"Receive json from {self.user}: {data}")
         if self.is_driver:
             await self.create_geopoint(data)
             return
