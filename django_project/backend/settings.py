@@ -186,11 +186,17 @@ if os.environ.get('RUNNING_FROM_DOCKER', False):
             },
         },
         'handlers': {
-            'file': {
+            'django_file': {
                 'level': 'INFO' if DEBUG else 'ERROR',
                 'class': 'logging.FileHandler',
-                'filename': './logs.log',
-                'formatter': 'verbose'
+                'filename': './django_logs.log',
+                'formatter': 'verbose',
+            },
+            'websocket_file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': './websocket_logs.log',
+                'formatter': 'verbose',
             },
         },
         'loggers': {
