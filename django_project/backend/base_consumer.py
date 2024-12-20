@@ -35,10 +35,11 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             logger.info(f"{self.user} disconnected")
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    async def send_json(self, data):
+    async def send_json(self, data, logging_enabled=True):
         """Send a JSON serialized message."""
         text_data = json.dumps(data)
-        logger.info(f"Send json to {self.user}: {text_data}")
+        if logging_enabled:
+            logger.info(f"Send json to {self.user}: {text_data}")
         await self.send(text_data=text_data)
 
     async def receive(self, text_data):
@@ -119,7 +120,9 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
                     lambda: OrderSerializerForTransporter(
                         order, transporter_manager=order.transporter_manager).data
                 )()
-            await self.send_json({"add_or_update_order": serializer_data})
+            logger.info(
+                f"Send json to {self.user}: Order #{order.id} added or updated")
+            await self.send_json({"add_or_update_order": serializer_data}, logging_enabled=False)
 
     async def remove_order(self, event):
         if self.status == event["order_status"]:
