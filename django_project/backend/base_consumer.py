@@ -25,7 +25,6 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             await self.accept()
-            logger.info(f"{self.user} connected")
             await self.send_json({"message": "connected"})
         else:
             await self.close()
