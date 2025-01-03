@@ -20,15 +20,7 @@ class OrderOfferSerializer(serializers.ModelSerializer):
         exclude = ['order']
 
 
-class OrderTrackingGeoPointSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderTrackingGeoPoint
-        fields = '__all__'
-
-
 class OrderTrackingSerializer(serializers.ModelSerializer):
-    geopoints = OrderTrackingGeoPointSerializer(many=True)
-
     class Meta:
         model = OrderTracking
         fields = '__all__'

@@ -1,7 +1,6 @@
-from typing import Iterable
-from rest_framework.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from api_users.models import TransporterManager, UserModel
 from api_notification.models import Notification, NotificationType
@@ -9,29 +8,16 @@ from .order import OrderModel, OrderStatus
 
 
 class OrderTracking(models.Model):
-    order = models.OneToOneField(
-        OrderModel, on_delete=models.CASCADE, verbose_name='Заказ', related_name='tracking')
-
-    # relationship fields:
-    # geopoints
-
-    class Meta:
-        verbose_name = 'Отслеживание'
-        verbose_name_plural = 'Отслеживание'
-
-    def __str__(self):
-        return f'{self.id} Трэкинг - [{self.order}]'
-
-
-class OrderTrackingGeoPoint(models.Model):
-    tracking = models.ForeignKey(OrderTracking, on_delete=models.CASCADE, verbose_name='Отслеживание',
-                                 related_name='geopoints')
+    order = models.ForeignKey(OrderModel, on_delete=models.CASCADE, verbose_name='Заказ',
+                              related_name='tracking')
 
     latitude = models.FloatField(verbose_name='Широта')
     longitude = models.FloatField(verbose_name='Долгота')
 
     created_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Время создания')
+        auto_now_add=True, verbose_name='Время создания')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="Время обновления")
 
     class Meta:
         verbose_name = 'Геоточка'
@@ -39,10 +25,10 @@ class OrderTrackingGeoPoint(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.tracking.order.make.add_or_update_order()
+        self.order.make.add_or_update_order()
 
     def __str__(self):
-        return f'{self.id} Геоточка - [{self.tracking}]'
+        return f'Геоточка - [{self.order}]'
 
 
 class OrderDocument(models.Model):

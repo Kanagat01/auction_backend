@@ -2,9 +2,13 @@ from django.contrib import admin
 from .models import *
 
 
-admin.site.register(OrderTracking)
-admin.site.register(OrderTrackingGeoPoint)
 admin.site.register(OrderOffer)
+
+
+@admin.register(OrderTracking)
+class OrderTrackingAdmin(admin.ModelAdmin):
+    readonly_fields = ('created_at', 'updated_at')
+    fields = ('order', 'latitude', 'longitude', 'created_at', 'updated_at')
 
 
 @admin.register(OrderModel)

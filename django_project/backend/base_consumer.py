@@ -55,7 +55,7 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
         '''
         logger.info(f"Receive json from {self.user}: {data}")
         if self.is_driver:
-            await self.create_geopoint(data)
+            await self.update_tracking(data)
             return
 
         action = data.get("action")
@@ -67,7 +67,7 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             else:
                 await self.send_json({"error": "incorrect_status"})
 
-    async def create_geopoint(self, data):
+    async def update_tracking(self, data):
         try:
             order_id = int(data.get("order_id"))
         except Exception as ex:
@@ -87,14 +87,13 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            tracking_id = await database_sync_to_async(lambda: order.tracking.id)()
+            tracking = await database_sync_to_async(lambda: order.tracking)()
+            new_data = data
         except OrderModel.tracking.RelatedObjectDoesNotExist:
-            tracking = await database_sync_to_async(OrderTracking.objects.create)(order=order)
-            tracking_id = tracking.id
+            tracking = None
+            new_data = {"order": order.id, **data}
 
-        serializer = OrderTrackingGeoPointSerializer(
-            data={'tracking': tracking_id, **data})
-
+        serializer = OrderTrackingSerializer(instance=tracking, data=new_data)
         is_valid = await database_sync_to_async(serializer.is_valid)()
         if is_valid:
             await database_sync_to_async(serializer.save)()
