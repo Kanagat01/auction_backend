@@ -190,7 +190,8 @@ if os.environ.get('RUNNING_FROM_DOCKER', False):
                 'level': 'INFO' if DEBUG else 'ERROR',
                 'class': 'logging.FileHandler',
                 'filename': './logs.log',
-                'formatter': 'verbose'
+                'formatter': 'verbose',
+                'encoding': 'utf-8',
             },
         },
         'loggers': {
@@ -201,7 +202,7 @@ if os.environ.get('RUNNING_FROM_DOCKER', False):
             },
             'websocket': {
                 'handlers': ['file'],
-                'level': 'INFO',
+                'level': 'INFO' if DEBUG else 'ERROR',
                 'propagate': True,
             },
         },

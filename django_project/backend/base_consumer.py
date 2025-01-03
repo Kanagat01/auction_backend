@@ -36,7 +36,7 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
 
     async def send_json(self, data, logging_enabled=True):
         """Send a JSON serialized message."""
-        text_data = json.dumps(data)
+        text_data = json.dumps(data, ensure_ascii=False)
         if logging_enabled:
             logger.info(f"Send json to {self.user}: {text_data}")
         await self.send(text_data=text_data)
@@ -70,13 +70,19 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
     async def update_tracking(self, data):
         try:
             order_id = int(data.get("order_id"))
-        except Exception as ex:
-            await self.send_json({"error": ex})
+            data["order"] = order_id
+        except Exception:
+            await self.send_json({"error": "invalid or missing order_id"})
             return
 
-        order = await database_sync_to_async(
-            OrderModel.objects.get
-        )(id=order_id)
+        try:
+            order: OrderModel = await database_sync_to_async(
+                OrderModel.objects.get
+            )(id=order_id)
+        except OrderModel.DoesNotExist:
+            await self.send_json({"error": "order doesn't exist"})
+            return
+
         have_access = await database_sync_to_async(lambda: order.driver != self.user.driver_profile)()
         if have_access:
             await self.send_json({"error": "order isn't belong to you"})
@@ -86,14 +92,10 @@ class BaseAuthorisedConsumer(AsyncWebsocketConsumer):
             await self.send_json({"error": "order status isn't being executed"})
             return
 
-        try:
-            tracking = await database_sync_to_async(lambda: order.tracking)()
-            new_data = data
-        except OrderModel.tracking.RelatedObjectDoesNotExist:
-            tracking = None
-            new_data = {"order": order.id, **data}
-
-        serializer = OrderTrackingSerializer(instance=tracking, data=new_data)
+        instance = await database_sync_to_async(
+            lambda: OrderTracking.objects.filter(order=order).first()
+        )()
+        serializer = OrderTrackingSerializer(instance=instance, data=data)
         is_valid = await database_sync_to_async(serializer.is_valid)()
         if is_valid:
             await database_sync_to_async(serializer.save)()

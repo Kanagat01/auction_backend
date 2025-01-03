@@ -8,8 +8,8 @@ from .order import OrderModel, OrderStatus
 
 
 class OrderTracking(models.Model):
-    order = models.ForeignKey(OrderModel, on_delete=models.CASCADE, verbose_name='Заказ',
-                              related_name='tracking')
+    order = models.OneToOneField(OrderModel, on_delete=models.CASCADE, verbose_name='Заказ',
+                                 related_name='tracking')
 
     latitude = models.FloatField(verbose_name='Широта')
     longitude = models.FloatField(verbose_name='Долгота')
