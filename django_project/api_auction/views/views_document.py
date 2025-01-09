@@ -1,16 +1,10 @@
-from api_users.models import UserTypes
-from api_users.permissions import IsActiveUser, IsCustomerCompanyAccount, IsCustomerManagerAccount, IsDriverAccount
-from backend.global_functions import success_with_text, error_with_text
 from rest_framework.views import APIView
 from rest_framework.request import Request
+from api_users.models import UserTypes
+from api_users.permissions import IsActiveUser, IsCustomerCompanyAccount, IsCustomerManagerAccount, IsDriverAccount
+from api_auction.models import OrderModel
 from api_auction.serializers import *
-
-
-class PrintOrder(APIView):
-    permission_classes = [IsActiveUser]
-
-    def get(self, request):
-        pass
+from backend.global_functions import success_with_text, error_with_text
 
 
 class AddDocumentView(APIView):

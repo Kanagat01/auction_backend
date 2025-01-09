@@ -1,16 +1,19 @@
-from django.db.models import Q, Exists, OuterRef
-from django.db.models import Q, OuterRef, Subquery,  Value, CharField, Exists, OuterRef
+from io import BytesIO
+from datetime import datetime
+from docxtpl import DocxTemplate
+from django.http import HttpResponse
+from django.db.models import Q, Exists, OuterRef, Subquery, Value, CharField
 from django.db.models.functions import Concat
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 
 from api_auction.models import *
 from api_auction.serializers import *
 from api_users.models.user import UserModel, UserTypes
-from api_users.permissions.customer_permissions import IsCustomerCompanyAccount, IsCustomerManagerAccount
-from api_users.permissions.transporter_permissions import IsTransporterCompanyAccount, IsTransporterManagerAccount
+from api_users.permissions import *
 from backend.global_functions import success_with_text, error_with_text
 
 
@@ -84,7 +87,7 @@ class GetOrdersView(APIView):
                 company = user.transporter_manager.company
             else:
                 company = user.transporter_company
-        
+
             if status in [OrderStatus.in_auction, OrderStatus.in_bidding]:
                 filter_kwargs['customer_manager__company__in'] = company.allowed_customer_companies.all(
                 )
@@ -104,14 +107,13 @@ class GetOrdersView(APIView):
         else:
             company = user.transporter_company
         manager_filter = {"transporter_manager__company": company}
-        
+
         return OrderModel.objects.annotate(
             has_offer=Exists(
                 OrderOffer.objects.filter(
                     order=OuterRef('pk'), status=OrderOfferStatus.none, **manager_filter)
             )
         ).filter(status_filter, **filter_kwargs, has_offer=True)
-
 
     def apply_city_filters(self, request, orders):
         city_from = request.query_params.get('city_from')
@@ -178,3 +180,83 @@ class GetOrdersView(APIView):
                 for_bidding=status == OrderStatus.in_bidding,
                 transporter_manager=user.transporter_manager
             ).data
+
+
+class GetOrderPdf(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def date_to_str(self, date: str):
+        dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
+        return dt.strftime("%d.%m.%Y %H:%M")
+
+    def get(self, request: Request):
+        user: UserModel = request.user
+        user_type_check1 = user.user_type in [
+            UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]
+        user_type_check2 = user.user_type in [
+            UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]
+
+        if user_type_check1:
+            customer_manager = user.customer_manager if hasattr(
+                user, "customer_manager") else user.customer_company.managers.first()
+            serializer = CustomerGetOrderByIdSerializer(
+                data=request.query_params, customer_manager=customer_manager)
+
+        elif user_type_check2:
+            transporter_manager = user.transporter_manager if hasattr(
+                user, "transporter_manager") else user.transporter_company.get_manager()
+            serializer = TransporterGetOrderByIdSerializer(
+                data=request.query_params, transporter_manager=transporter_manager)
+
+        if not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        order: OrderModel = serializer.validated_data['order_id']
+        order_data = OrderSerializer(order).data
+
+        order_data["transport_body_type"] = order.transport_body_type.name
+        order_data["transport_load_type"] = order.transport_load_type.name
+        order_data["transport_unload_type"] = order.transport_unload_type.name
+
+        order_data["stage_number_lst"] = ", ".join(
+            [str(x["order_stage_number"]) for x in order_data["stages"]])
+
+        if "application_type" in order_data:
+            if order_data["application_type"] == "in_auction":
+                application_type = "Аукцион"
+            elif order_data["application_type"] == "in_bidding":
+                application_type = "Торги"
+            else:
+                application_type = "Прямой заказ"
+            order_data["application_type"] = application_type
+        else:
+            order_data["application_type"] = None
+
+        if order.status in [OrderStatus.being_executed, OrderStatus.completed]:
+            date = order_data["offers"][0]["updated_at"]
+            order_data["assignment_datetime"] = self.date_to_str(date)
+        elif order.status == OrderStatus.in_direct:
+            offer = order_data["offers"][0]
+            date = offer["created_at"]
+            order_data["assignment_datetime"] = self.date_to_str(date)
+            order_data["transporter_manager"] = offer["transporter_manager"]
+        else:
+            order_data["assignment_datetime"] = None
+
+        if order.status == OrderStatus.in_direct and order_data["offers"]:
+            offer = order_data["offers"][0]
+            if offer["status"] == OrderOfferStatus.rejected:
+                order_data[
+                    "rejected_offer_text"] = f'Отказ Перевозчика от Заказа, {self.date_to_str(offer["updated_at"])}'
+
+        template = DocxTemplate(
+            "django_project/api_auction/views/order_pdf_template.docx")
+        template.render(order_data)
+
+        doc_io = BytesIO()
+        template.save(doc_io)
+        doc_io.seek(0)
+
+        response = HttpResponse(
+            doc_io, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        return response

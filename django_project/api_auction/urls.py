@@ -40,6 +40,7 @@ urlpatterns = [
     path("find_cargo/<int:transportation_number>/<str:machine_number>/",
          views_common.FindCargoView.as_view()),
     path("get_orders/", views_common.GetOrdersView.as_view()),
+    path("get_order_pdf/", views_common.GetOrderPdf.as_view()),
     path('customer/', include(customer)),
     path('transporter/', include(transporter)),
     path('driver/', include(driver)),

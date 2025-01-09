@@ -73,10 +73,12 @@ class OrderOffer(models.Model):
     transporter_manager = models.ForeignKey(TransporterManager, on_delete=models.CASCADE, verbose_name='Перевозчик',
                                             related_name='offers')
     price = models.PositiveIntegerField(verbose_name='Цена')
-    created_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Время создания')
     status = models.CharField(max_length=20, choices=OrderOfferStatus.choices(), default=OrderOfferStatus.none,
                               verbose_name='Статус')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Время создания')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Время обновления')
 
     class Meta:
         verbose_name = 'Предложение'
