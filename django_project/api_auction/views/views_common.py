@@ -1,7 +1,9 @@
+import os
 from io import BytesIO
+import subprocess
 from datetime import datetime
 from docxtpl import DocxTemplate
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.db.models import Q, Exists, OuterRef, Subquery, Value, CharField
 from django.db.models.functions import Concat
 from rest_framework.views import APIView
@@ -274,6 +276,12 @@ class GetOrderPdf(APIView):
             ]
             order_data["stages"][idx] = stage_data
 
+    def generate_pdf(self, docx_file_path):
+        pdf_file_path = docx_file_path.replace(".docx", ".pdf")
+        subprocess.run(
+            ['soffice', '--headless', '--convert-to', 'pdf', docx_file_path])
+        return pdf_file_path
+
     def get(self, request: Request):
         user: UserModel = request.user
         serializer = self.get_user_serializer(user, request.query_params)
@@ -286,12 +294,17 @@ class GetOrderPdf(APIView):
 
         self.prepare_order_data(order_data, order)
 
-        template = DocxTemplate(
-            "api_auction/views/order_pdf_template.docx")
+        docx_file_path = f"order_{order.pk}.docx"
+        template = DocxTemplate("api_auction/views/order_pdf_template.docx")
         template.render(order_data)
+        template.save(docx_file_path)
 
-        doc_io = BytesIO()
-        template.save(doc_io)
-        doc_io.seek(0)
+        pdf_file_path = self.generate_pdf(docx_file_path)
+        with open(pdf_file_path, 'rb') as pdf_file:
+            pdf_content = pdf_file.read()
 
-        return HttpResponse(doc_io, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        os.remove(docx_file_path)
+        os.remove(pdf_file_path)
+
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        return response
