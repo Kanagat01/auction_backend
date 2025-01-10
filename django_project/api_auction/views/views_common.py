@@ -185,61 +185,57 @@ class GetOrdersView(APIView):
 class GetOrderPdf(APIView):
     permission_classes = [IsAuthenticated]
 
-    def date_to_str(self, date: str):
-        dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
-        return dt.strftime("%d.%m.%Y %H:%M")
+    @staticmethod
+    def to_int(x):
+        return int(x) if isinstance(x, float) and x.is_integer() else x
 
-    def get(self, request: Request):
-        user: UserModel = request.user
-        user_type_check1 = user.user_type in [
-            UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]
-        user_type_check2 = user.user_type in [
-            UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]
+    @staticmethod
+    def format_date(date: str, date_format="%Y-%m-%d", output_format="%d.%m.%Y"):
+        return datetime.strptime(date, date_format).strftime(output_format)
 
-        if user_type_check1:
-            customer_manager = user.customer_manager if hasattr(
+    @staticmethod
+    def format_time(time: str):
+        return time[:-3]  # Убираем секунды
+
+    @staticmethod
+    def format_datetime(date: str, time_start: str, time_end: str):
+        formatted_date = GetOrderPdf.format_date(date)
+        formatted_time = f'{GetOrderPdf.format_time(time_start)}-{GetOrderPdf.format_time(time_end)}'
+        return f'{formatted_date}\n{formatted_time}'
+
+    def get_user_serializer(self, user, query_params):
+        if user.user_type in [UserTypes.CUSTOMER_MANAGER, UserTypes.CUSTOMER_COMPANY]:
+            manager = user.customer_manager if hasattr(
                 user, "customer_manager") else user.customer_company.managers.first()
-            serializer = CustomerGetOrderByIdSerializer(
-                data=request.query_params, customer_manager=customer_manager)
-
-        elif user_type_check2:
-            transporter_manager = user.transporter_manager if hasattr(
+            return CustomerGetOrderByIdSerializer(data=query_params, customer_manager=manager)
+        elif user.user_type in [UserTypes.TRANSPORTER_MANAGER, UserTypes.TRANSPORTER_COMPANY]:
+            manager = user.transporter_manager if hasattr(
                 user, "transporter_manager") else user.transporter_company.get_manager()
-            serializer = TransporterGetOrderByIdSerializer(
-                data=request.query_params, transporter_manager=transporter_manager)
+            return TransporterGetOrderByIdSerializer(data=query_params, transporter_manager=manager)
+        return None
 
-        if not serializer.is_valid():
-            return error_with_text(serializer.errors)
-
-        order: OrderModel = serializer.validated_data['order_id']
-        order_data = OrderSerializer(order).data
-
-        order_data["transport_body_type"] = order.transport_body_type.name
-        order_data["transport_load_type"] = order.transport_load_type.name
-        order_data["transport_unload_type"] = order.transport_unload_type.name
-
-        order_data["stage_number_lst"] = ", ".join(
-            [str(x["order_stage_number"]) for x in order_data["stages"]])
-
-        if "application_type" in order_data:
-            if order_data["application_type"] == "in_auction":
-                application_type = "Аукцион"
-            elif order_data["application_type"] == "in_bidding":
-                application_type = "Торги"
-            else:
-                application_type = "Прямой заказ"
-            order_data["application_type"] = application_type
-        else:
-            order_data["application_type"] = None
+    def prepare_order_data(self, order_data, order):
+        order_data.update({
+            "transport_body_type": order.transport_body_type.name,
+            "transport_load_type": order.transport_load_type.name,
+            "transport_unload_type": order.transport_unload_type.name,
+            "transport_body_width": self.to_int(order_data["transport_body_width"]),
+            "transport_body_length": self.to_int(order_data["transport_body_length"]),
+            "transport_body_height": self.to_int(order_data["transport_body_height"]),
+            "stage_number_lst": ", ".join(str(x["order_stage_number"]) for x in order_data["stages"]),
+            "application_type": self.get_application_type(order_data.get("application_type")),
+        })
 
         if order.status in [OrderStatus.being_executed, OrderStatus.completed]:
             date = order_data["offers"][0]["updated_at"]
-            order_data["assignment_datetime"] = self.date_to_str(date)
+            order_data["assignment_datetime"] = self.format_date(
+                date, "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M")
         elif order.status == OrderStatus.in_direct:
             offer = order_data["offers"][0]
-            date = offer["created_at"]
-            order_data["assignment_datetime"] = self.date_to_str(date)
-            order_data["transporter_manager"] = offer["transporter_manager"]
+            order_data.update({
+                "assignment_datetime": self.format_date(offer["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M"),
+                "transporter_manager": offer["transporter_manager"],
+            })
         else:
             order_data["assignment_datetime"] = None
 
@@ -247,7 +243,48 @@ class GetOrderPdf(APIView):
             offer = order_data["offers"][0]
             if offer["status"] == OrderOfferStatus.rejected:
                 order_data[
-                    "rejected_offer_text"] = f'Отказ Перевозчика от Заказа, {self.date_to_str(offer["updated_at"])}'
+                    "rejected_offer_text"] = f'Отказ Перевозчика от Заказа, {self.format_date(offer["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M")}'
+
+        self.prepare_stages(order_data)
+
+    @staticmethod
+    def get_application_type(application_type):
+        return {
+            "in_auction": "Аукцион",
+            "in_bidding": "Торги",
+        }.get(application_type, "Прямой заказ" if application_type else None)
+
+    def prepare_stages(self, order_data):
+        for idx, stage in enumerate(order_data["stages"]):
+            load_stage = stage["load_stage"]
+            load_stage["datetime"] = self.format_datetime(
+                load_stage["date"], load_stage["time_start"], load_stage["time_end"])
+
+            unload_stage = stage["unload_stage"]
+            unload_stage["datetime"] = self.format_datetime(
+                unload_stage["date"], unload_stage["time_start"], unload_stage["time_end"])
+
+            stage_data = [
+                stage["order_stage_number"],
+                load_stage,
+                unload_stage,
+                stage["cargo"],
+                self.to_int(stage["weight"]),
+                self.to_int(stage["volume"]),
+            ]
+            order_data["stages"][idx] = stage_data
+
+    def get(self, request: Request):
+        user: UserModel = request.user
+        serializer = self.get_user_serializer(user, request.query_params)
+
+        if not serializer or not serializer.is_valid():
+            return error_with_text(serializer.errors)
+
+        order: OrderModel = serializer.validated_data["order_id"]
+        order_data = OrderSerializer(order).data
+
+        self.prepare_order_data(order_data, order)
 
         template = DocxTemplate(
             "django_project/api_auction/views/order_pdf_template.docx")
@@ -257,6 +294,4 @@ class GetOrderPdf(APIView):
         template.save(doc_io)
         doc_io.seek(0)
 
-        response = HttpResponse(
-            doc_io, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        return response
+        return HttpResponse(doc_io, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
