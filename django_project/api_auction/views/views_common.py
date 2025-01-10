@@ -287,7 +287,7 @@ class GetOrderPdf(APIView):
         self.prepare_order_data(order_data, order)
 
         template = DocxTemplate(
-            "django_project/api_auction/views/order_pdf_template.docx")
+            "api_auction/views/order_pdf_template.docx")
         template.render(order_data)
 
         doc_io = BytesIO()
