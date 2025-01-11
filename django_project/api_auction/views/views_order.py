@@ -127,23 +127,21 @@ def update_stages(customer_manager: CustomerManager, order: OrderModel, stages_d
         delete_stages[idx] = serializer.validated_data['order_stage_id']
 
     for idx, stage_data in enumerate(edit_stages):
-        stage_data["order_stage_id"] = stage_data.pop("id")
         serializer = CustomerGetOrderCoupleSerializer(
-            data=stage_data, customer_manager=customer_manager)
+            data={"order_stage_id": stage_data.pop("id")}, customer_manager=customer_manager)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
 
-        order_stage_id = serializer.validated_data['order_stage_id']
-
+        order_stage: OrderStageCouple = serializer.validated_data['order_stage_id']
         stage_couple = OrderStageCoupleSerializer(
-            order_stage_id, data=stage_data, partial=True)
+            instance=order_stage, data=stage_data, partial=True)
 
         if not stage_couple.is_valid():
             return error_with_text(stage_couple.errors)
 
         stage_number = stage_couple.validated_data['order_stage_number']
         if OrderStageCouple.check_stage_number(stage_number, order.customer_manager.company,
-                                               order_stage_id.pk):
+                                               order_stage.pk):
             return error_with_text(f'order_stage_number_must_be_unique:{stage_number}')
 
         edit_stages[idx] = stage_couple
@@ -192,7 +190,8 @@ class EditOrderView(APIView):
             return error_with_text('transportation_number_must_be_unique')
 
         stages_data = request.data.pop('stages', [])
-        update_stages(customer_manager=request.user.customer_manager, order=order, stages_data=stages_data)
+        update_stages(customer_manager=request.user.customer_manager,
+                      order=order, stages_data=stages_data)
         order_serializer.save()
 
         orders = OrderModel.objects.filter(

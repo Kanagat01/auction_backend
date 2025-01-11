@@ -1,9 +1,8 @@
 import os
-from io import BytesIO
 import subprocess
 from datetime import datetime
 from docxtpl import DocxTemplate
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.db.models import Q, Exists, OuterRef, Subquery, Value, CharField
 from django.db.models.functions import Concat
 from rest_framework.views import APIView
@@ -229,23 +228,21 @@ class GetOrderPdf(APIView):
         })
 
         if order.status in [OrderStatus.being_executed, OrderStatus.completed]:
-            date = order_data["offers"][0]["updated_at"]
-            order_data["assignment_datetime"] = self.format_date(
-                date, "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M")
+            assignment_datetime = order_data["offers"][0]["updated_at"]
         elif order.status == OrderStatus.in_direct:
             offer = order_data["offers"][0]
-            order_data.update({
-                "assignment_datetime": self.format_date(offer["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M"),
-                "transporter_manager": offer["transporter_manager"],
-            })
-        else:
-            order_data["assignment_datetime"] = None
+            assignment_datetime = offer["created_at"]
+            order_data["transporter_manager"] = offer["transporter_manager"]
+
+        if assignment_datetime:
+            order_data["assignment_datetime"] = self.format_date(
+                assignment_datetime, "%Y-%m-%dT%H:%M:%S.%f%z", "%d.%m.%Y %H:%M")
 
         if order.status == OrderStatus.in_direct and order_data["offers"]:
             offer = order_data["offers"][0]
             if offer["status"] == OrderOfferStatus.rejected:
                 order_data[
-                    "rejected_offer_text"] = f'Отказ Перевозчика от Заказа, {self.format_date(offer["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ", "%d.%m.%Y %H:%M")}'
+                    "rejected_offer_text"] = f'Отказ Перевозчика от Заказа, {self.format_date(offer["updated_at"], "%Y-%m-%dT%H:%M:%S.%f%z", "%d.%m.%Y %H:%M")}'
 
         self.prepare_stages(order_data)
 
