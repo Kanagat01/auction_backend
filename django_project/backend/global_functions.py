@@ -6,7 +6,7 @@ from rest_framework import status
 from .settings import SMS_LOGIN, SMS_PASSWORD
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def error_with_text(text):
