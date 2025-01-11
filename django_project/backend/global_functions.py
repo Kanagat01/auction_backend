@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import status
 from .settings import SMS_LOGIN, SMS_PASSWORD
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def error_with_text(text):
@@ -29,7 +32,11 @@ def send_sms(phone: int, message: str) -> dict:
         raise SmsAeroException("Number must be a valid phone number")
 
     api = SmsAero(SMS_LOGIN, SMS_PASSWORD)
-    return api.send_sms(phone, message)
+    response = api.send_sms(phone, message)
+
+    logger.info(f"SMS sent to {phone}: {message}")
+
+    return response
 
 
 def all_read_only_serializer(cls):
