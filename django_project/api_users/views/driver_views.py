@@ -42,7 +42,6 @@ class DriverAuthConfirm(APIView):
     permission_classes = ()
 
     def post(self, request: Request):
-        # print(request.data)
         serializer = DriverAuthConfirmSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
