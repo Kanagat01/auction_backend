@@ -14,7 +14,6 @@ class DriverAuthRequestView(APIView):
     permission_classes = ()
 
     def post(self, request: Request):
-        # print(request.data)
         serializer = DriverAuthRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return error_with_text(serializer.errors)
@@ -28,12 +27,11 @@ class DriverAuthRequestView(APIView):
                 phone_number=phone_number)
 
         driver_register_request.generate_code()
-        # print(driver_register_request.confirmation_code)
 
         try:
-            send_sms(
-                int(phone_number), f"Ваш код подтверждения в Cargonika: {driver_register_request.confirmation_code}")
-            return success_with_text("ok")
+            response = send_sms(
+                phone_number, f"Ваш код подтверждения в Cargonika: {driver_register_request.confirmation_code}")
+            return success_with_text(response)
         except SmsAeroException as e:
             print(e)
             return error_with_text('sms_service_error: ' + str(e))
@@ -127,9 +125,9 @@ class RequestPhoneNumberChangeView(APIView):
         phone_change_request.generate_code()
 
         try:
-            send_sms(
-                int(phone_number), f"Ваш код подтверждения в Cargonika: {phone_change_request.confirmation_code}")
-            return success_with_text("ok")
+            response = send_sms(
+                phone_number, f"Ваш код подтверждения в Cargonika: {phone_change_request.confirmation_code}")
+            return success_with_text(response)
         except SmsAeroException as e:
             print(e)
             return error_with_text('sms_service_error: ' + str(e))
