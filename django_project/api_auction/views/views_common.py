@@ -227,6 +227,7 @@ class GetOrderPdf(APIView):
             "application_type": self.get_application_type(order_data.get("application_type")),
         })
 
+        assignment_datetime = None
         if order.status in [OrderStatus.being_executed, OrderStatus.completed]:
             assignment_datetime = order_data["offers"][0]["updated_at"]
         elif order.status == OrderStatus.in_direct:
